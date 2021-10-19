@@ -77,6 +77,8 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Precategory ℓ₁ ℓ₂)
     interpTm t C.∘ C-π₁ (interpCtx Γ) (interpTy A)
   
   interpTm (β {Γ} {A} {B} t s i) =
+    {-(C-Appβ (interpCtx Γ) (interpTy A) (interpTy B) (interpTm t) (interpTm s)
+    ∙ (λ i →  interpTm t C.∘ C-pair (interpId {Γ} (~ i)) (interpTm s))) i-}
     (C-App (interpCtx Γ) (interpTy A) (interpTy B)
          (C-Λ (interpCtx Γ) (interpTy A) (interpTy B) (interpTm t))
          (interpTm s)
@@ -160,16 +162,22 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Precategory ℓ₁ ℓ₂)
       (λ k → interpTm t)
       (λ k → interpTm s) i j
 
-  interpW₁Tms {Γ} {Δ} {A} ! = C-!η (C-! C.∘ C-π₁ (interpCtx Γ) (interpTy A)) ⁻¹
-  interpW₁Tms {Γ} {Δ ⊹ B} {A} (σ ⊕ t) =
+  interpW₁Tms' : {Γ Δ : Ctx} {A : Ty} (σ : Tms Γ Δ) →
+    interpTms (W₁Tms A σ) ≡ interpTms σ C.∘ C-π₁ (interpCtx Γ) (interpTy A)
+  interpW₁Tms' {Γ} {Δ} {A} ! = C-!η (C-! C.∘ C-π₁ (interpCtx Γ) (interpTy A)) ⁻¹
+  interpW₁Tms' {Γ} {Δ ⊹ B} {A} (σ ⊕ t) =
+    {-(λ i → C-pair (interpW₁Tms' {A = A} σ i) (interpTm t C.∘ C-π₁ (interpCtx Γ) (interpTy A)))
+    ∙ π∘ (interpTms σ) (interpTm t) (C-π₁ (interpCtx Γ) (interpTy A )) ⁻¹-}
     C-pair (interpTms (W₁Tms A σ)) (interpTm t C.∘ C-π₁ (interpCtx Γ) (interpTy A))
       ≡⟨ (λ i →
-        C-pair (interpW₁Tms {A = A} σ i) (interpTm t C.∘ C-π₁ (interpCtx Γ) (interpTy A))) ⟩
+        C-pair (interpW₁Tms' {A = A} σ i) (interpTm t C.∘ C-π₁ (interpCtx Γ) (interpTy A))) ⟩
     C-pair (interpTms σ C.∘ C-π₁ (interpCtx Γ) (interpTy A))
            (interpTm t C.∘ C-π₁ (interpCtx Γ) (interpTy A))
       ≡⟨ π∘ (interpTms σ) (interpTm t) (C-π₁ (interpCtx Γ) (interpTy A )) ⁻¹ ⟩
     (C-pair (interpTms σ) (interpTm t) C.∘ C-π₁ (interpCtx Γ) (interpTy A))
       ∎
+
+  interpW₁Tms = interpW₁Tms'
 
   interp∘Tms ! τ = C-!η (C-! C.∘ interpTms τ) ⁻¹
   interp∘Tms (σ ⊕ t) τ =
@@ -211,26 +219,25 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Precategory ℓ₁ ℓ₂)
 
 module _ where
   open Precategory
-  open Functor
-  open PShCartesian REN
 
-  semanticBase : Char → ob (PSh REN)
-  semanticBase X = TM (Base X)
+  semanticBase1 : Char → ob (PSh REN)
+  semanticBase1 X = TM (Base X)
 
-  open Eliminator (PSh REN) ⦃ PShCat ⦄ semanticBase
+  open Eliminator (PSh REN) ⦃ PShCat ⦄ semanticBase1
 
-  SEM : Ty → ob (PSh REN)
-  SEM A = interpTy A
+  SEM1 : Ty → ob (PSh REN)
+  SEM1 A = interpTy A
 
 module _ where
   open NatTrans
   open Functor
   open Precategory (PSh REN) hiding (_∘_)
   open PShCartesian REN
-  open Eliminator (PSh REN) ⦃ PShCat ⦄ semanticBase
 
-  qTM1 : (A : Ty) → Hom[ SEM A , TM A ]
-  uTM1 : (A : Ty) → Hom[ TM A , SEM A ]
+  open Eliminator (PSh REN) ⦃ PShCat ⦄ semanticBase1
+
+  qTM1 : (A : Ty) → Hom[ SEM1 A , TM A ]
+  uTM1 : (A : Ty) → Hom[ TM A , SEM1 A ]
 
   N-ob (qTM1 (Base X)) Γ t = t
   N-hom (qTM1 (Base X)) σ = refl
@@ -313,27 +320,104 @@ module _ where
   N-hom (N-hom (uTM1 (A ⇒ B)) {Σ} {Ω} σ i t) {Γ} {Δ} τ j (μ , 𝓈) =
     isSet→SquareP (λ i j → snd (F-ob (interpTy B) Δ))
       (λ k → N-hom (N-ob (uTM1 (A Ty.⇒ B)) Ω (t [ varify σ ])) τ k (μ , 𝓈))
-      (λ k → N-hom (F-hom (SEM (A Ty.⇒ B)) σ (N-ob (uTM1 (A Ty.⇒ B)) Σ t)) τ k (μ , 𝓈))
+      (λ k → N-hom (F-hom (SEM1 (A Ty.⇒ B)) σ (N-ob (uTM1 (A Ty.⇒ B)) Σ t)) τ k (μ , 𝓈))
       (λ k → N-ob (N-hom (uTM1 (A Ty.⇒ B)) σ k t) Δ (μ ∘Ren τ , F-hom (interpTy A) τ 𝓈))
       (λ k → F-hom (interpTy B) τ (N-ob (N-hom (uTM1 (A Ty.⇒ B)) σ k t) Γ (μ , 𝓈))) i j
+
+module _ where
+  open Precategory
+
+  semanticBase : Char → ob (PSh REN)
+  semanticBase X = NF (Base X)
+
+  open Eliminator (PSh REN) ⦃ PShCat ⦄ semanticBase
+
+  SEM : Ty → ob (PSh REN)
+  SEM A = interpTy A
+
+  SEMS : Ctx → ob (PSh REN)
+  SEMS Γ = interpCtx Γ
 
 module _ where
   open NatTrans
   open Functor
   open Precategory (PSh REN) hiding (_∘_)
   open PShCartesian REN
+
   open Eliminator (PSh REN) ⦃ PShCat ⦄ semanticBase
 
-  qTM : (A : Ty) → Hom[ SEM A , NF A ]
-  uTM : (A : Ty) → Hom[ NE A , SEM A ]
+  q : (A : Ty) → Hom[ SEM A , NF A ]
+  u : (A : Ty) → Hom[ NE A , SEM A ]
 
-  N-ob (qTM (Base X)) = {!!}
-  N-hom (qTM (Base X)) = {!!}
-  N-ob (qTM (A ⇒ B)) = {!!}
-  N-hom (qTM (A ⇒ B)) = {!!}
+  N-ob (q (Base X)) Γ N = N
+  N-hom (q (Base X)) σ = refl
+  N-ob (q (A ⇒ B)) Γ α =
+    LAM (N-ob (q B) (Γ ⊹ A) (N-ob α (Γ ⊹ A) (W₁Ren A (idRen Γ) , N-ob (u A) (Γ ⊹ A) (VN Zv))))
+  N-hom (q (A ⇒ B)) {Δ} {Σ} σ i α =
+    (LAM (N-ob (q B) (Σ ⊹ A) (N-ob α (Σ ⊹ A)
+      (σ ∘Ren W₁Ren A (idRen Σ) , N-ob (u A) (Σ ⊹ A) (VN Zv))))
+      ≡⟨ (λ i → LAM (N-ob (q B) (Σ ⊹ A) (N-ob α (Σ ⊹ A)
+            (lem i , N-hom (u A) (W₂Ren A σ) i (VN Zv))))) ⟩
+    LAM (N-ob (q B) (Σ ⊹ A) (N-ob α (Σ ⊹ A)
+      (W₁Ren A (idRen Δ) ∘Ren (W₂Ren A σ) ,
+        (F-hom (interpTy A) (W₂Ren A σ) (N-ob (u A) (Δ ⊹ A) (VN Zv))))))
+      ≡⟨ (λ i → LAM (N-ob (q B) (Σ ⊹ A) (N-hom α (W₂Ren A σ) i
+            (W₁Ren A (idRen Δ) , N-ob (u A) (Δ ⊹ A) (VN Zv))))) ⟩
+    LAM (N-ob (q B) (Σ ⊹ A) (F-hom (interpTy B) (W₂Ren A σ)
+      (N-ob α (Δ ⊹ A) (W₁Ren A (idRen Δ) , N-ob (u A) (Δ ⊹ A) (VN Zv)))))
+      ≡⟨ (λ i → LAM (N-hom (q B) (W₂Ren A σ) i
+        (N-ob α (Δ ⊹ A) (W₁Ren A (idRen Δ) , N-ob (u A) (Δ ⊹ A) (VN Zv))))) ⟩
+    LAM (N-ob (q B) (Δ ⊹ A)
+      (N-ob α (Δ ⊹ A) (W₁Ren A (idRen Δ) , N-ob (u A) (Δ ⊹ A) (VN Zv))) [ W₂Ren A σ ]NF)
+      ∎) i where
+     lem : σ ∘Ren W₁Ren A (idRen Σ) ≡ W₁Ren A (idRen Δ) ∘Ren (W₂Ren A σ)
+     lem =
+       σ ∘Ren W₁Ren A (idRen Σ)
+         ≡⟨ Wlem3Ren σ (idRen Σ) ⟩
+       W₁Ren A (σ ∘Ren idRen Σ)
+         ≡⟨ ap (W₁Ren A) (∘RenIdR σ) ⟩
+       W₁Ren A σ
+         ≡⟨ ap (W₁Ren A) (∘RenIdL σ ⁻¹) ⟩
+       W₁Ren A (idRen Δ ∘Ren σ)
+         ≡⟨ Wlem5Ren (idRen Δ) σ ⁻¹ ⟩
+       W₁Ren A (idRen Δ) ∘Ren W₂Ren A σ
+         ∎
 
-  uTM (Base X) = {!!}
-  uTM (A ⇒ B) = {!!}
+  N-ob (u (Base X)) Γ M = NEU M
+  N-hom (u (Base X)) σ = refl
+  N-ob (N-ob (u (A ⇒ B)) Γ M) Δ (σ , 𝓈) =
+    N-ob (u B) Δ (APP (M [ σ ]NE) (N-ob (q A) Δ 𝓈))
+  N-hom (N-ob (u (A ⇒ B)) Γ M) {Δ} {Σ} σ i (τ , 𝓈) =
+    (N-ob (u B) Σ (APP (M [ τ ∘Ren σ ]NE) (N-ob (q A) Σ (F-hom (interpTy A) σ 𝓈)))
+      ≡⟨ (λ j → N-ob (u B) Σ (APP ([][]NE M τ σ (~ j)) (N-hom (q A) σ j 𝓈))) ⟩
+    N-ob (u B) Σ (APP (M [ τ ]NE) (N-ob (q A) Δ 𝓈) [ σ ]NE)
+      ≡⟨ (λ j → N-hom (u B) σ j (APP (M [ τ ]NE) (N-ob (q A) Δ 𝓈))) ⟩
+    F-hom (interpTy B) σ (N-ob (u B) Δ (APP (M [ τ ]NE) (N-ob (q A) Δ 𝓈)))
+      ∎) i
+  N-ob (N-hom (u (A ⇒ B)) σ i M) Γ (τ , 𝓈) =
+    N-ob (u B) Γ (APP ([][]NE M σ τ i) (N-ob (q A) Γ 𝓈))
+  N-hom (N-hom (u (A ⇒ B)) {Σ} {Ω} σ i M) {Γ} {Δ} τ j (μ , 𝓈) =
+    isSet→SquareP (λ i j → snd (F-ob (interpTy B) Δ))
+      (λ k → N-hom (N-ob (u (A Ty.⇒ B)) Ω (M [ σ ]NE)) τ k (μ , 𝓈))
+      (λ k → N-hom (F-hom (SEM (A Ty.⇒ B)) σ (N-ob (u (A Ty.⇒ B)) Σ M)) τ k (μ , 𝓈))
+      (λ k → N-ob (N-hom (u (A Ty.⇒ B)) σ k M) Δ (μ ∘Ren τ , F-hom (interpTy A) τ 𝓈))
+      (λ k → F-hom (interpTy B) τ (N-ob (N-hom (u (A Ty.⇒ B)) σ k M) Γ (μ , 𝓈))) i j
+
+  qs : (Γ : Ctx) → Hom[ SEMS Γ , NFS Γ ]
+  us : (Γ : Ctx) → Hom[ NES Γ , SEMS Γ ]
+
+  N-ob (qs ∅) Δ _ = !NF
+  N-ob (qs (Γ ⊹ A)) Δ (𝒮 , 𝓈) = N-ob (qs Γ) Δ 𝒮 ⊕NF N-ob (q A) Δ 𝓈
+  N-hom (qs ∅) σ = refl
+  N-hom (qs (Γ ⊹ A)) σ i (𝒮 , 𝓈) = N-hom (qs Γ) σ i 𝒮 ⊕NF N-hom (q A) σ i 𝓈
+  
+  N-ob (us ∅) Δ _ = tt*
+  N-ob (us (Γ ⊹ A)) Δ (MS ⊕NE M) = N-ob (us Γ) Δ MS , N-ob (u A) Δ M
+  N-hom (us ∅) σ = refl
+  N-hom (us (Γ ⊹ A)) σ i (MS ⊕NE M) = N-hom (us Γ) σ i MS , N-hom (u A) σ i M
+
+  norm : {Γ : Ctx} {A : Ty} → Tm Γ A → Nf Γ A
+  norm {Γ} {A} t = N-ob (q A) Γ (N-ob (interpTm t) Γ (N-ob (us Γ) Γ (idNeu Γ)))
 
 module _ where
   open NatTrans
@@ -343,5 +427,13 @@ module _ where
   test1 = N-ob (uTM1 (ChurchType (Base 'A'))) ∅ TwoPlusTwo
   test2 = N-ob (qTM1 (ChurchType (Base 'A'))) ∅ test1
 
+  test3 = includeNormal (norm (TwoPlusTwo {Base 'A'}))
+
+  cong1 : V Zv [ idTms (∅ ⊹ Base 'A' ⊹ Base 'B') ] ≡ V Zv
+  cong1 = Zv[] (varify (W₁Ren (Base 'B') (idRen (∅ ⊹ Base 'A')))) (V Zv)
+
+  test4 = ap (includeNormal ∘ norm) cong1
+
   {-test1 = SEM (ChurchType (Base 'A')) .F-ob ∅
   test2 = SEM (ChurchType (Base 'A')) .F-hom-}
+

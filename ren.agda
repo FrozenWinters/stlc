@@ -393,6 +393,13 @@ module _ where
   NFS Γ .F-id i NS = [id]NFs NS i
   NFS Γ .F-seq σ τ i NS = [][]NFs NS σ τ (~ i)
 
+varifyNe : {Γ Δ : Ctx} → Ren Γ Δ → Nes Γ Δ
+varifyNe !R = !NE
+varifyNe (σ ⊕R v) = varifyNe σ ⊕NE VN v
+
+idNeu : (Γ : Ctx) → Nes Γ Γ
+idNeu Γ = varifyNe (idRen Γ)
+
 embedNeutral : {Γ : Ctx} {A : Ty} → Ne Γ A → Nf Γ A
 embedNeutral {A = Base c} M = NEU M
 embedNeutral {A = A ⇒ B} M = LAM (embedNeutral (APP (SNe Z M) (embedNeutral (VN Zv))))
