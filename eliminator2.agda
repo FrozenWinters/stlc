@@ -236,50 +236,50 @@ module _ where
 
   open Eliminator (PSh REN) ⦃ PShCat ⦄ semanticBase1
 
-  qTM1 : (A : Ty) → Hom[ SEM1 A , TM A ]
-  uTM1 : (A : Ty) → Hom[ TM A , SEM1 A ]
+  qTM : (A : Ty) → Hom[ SEM1 A , TM A ]
+  uTM : (A : Ty) → Hom[ TM A , SEM1 A ]
 
-  N-ob (qTM1 (Base X)) Γ t = t
-  N-hom (qTM1 (Base X)) σ = refl
-  N-ob (qTM1 (A ⇒ B)) Γ α =
-    Lam (N-ob (qTM1 B) (Γ ⊹ A) (N-ob α (Γ ⊹ A) (W₁Ren A (idRen Γ) , N-ob (uTM1 A) (Γ ⊹ A) (V Zv))))
-  N-hom (qTM1 (A ⇒ B)) {Δ} {Σ} σ i α =
-    (Lam (N-ob (qTM1 B) (Δ ⊹ A)
-      (N-ob α (Δ ⊹ A) (W₁Ren A (idRen Δ) , N-ob (uTM1 A) (Δ ⊹ A) (V Zv)))) [ varify σ ]
-      ≡⟨ Lam[] (N-ob (qTM1 B) (Δ ⊹ A)
-          (N-ob α (Δ ⊹ A) (W₁Ren A (idRen Δ) , N-ob (uTM1 A) (Δ ⊹ A) (V Zv)))) (varify σ) ⟩
-    Lam (N-ob (qTM1 B) (Δ ⊹ A)
-      (N-ob α (Δ ⊹ A) (W₁Ren A (idRen Δ) , N-ob (uTM1 A) (Δ ⊹ A) (V Zv)))
+  N-ob (qTM (Base X)) Γ t = t
+  N-hom (qTM (Base X)) σ = refl
+  N-ob (qTM (A ⇒ B)) Γ α =
+    Lam (N-ob (qTM B) (Γ ⊹ A) (N-ob α (Γ ⊹ A) (W₁Ren A (idRen Γ) , N-ob (uTM A) (Γ ⊹ A) (V Zv))))
+  N-hom (qTM (A ⇒ B)) {Δ} {Σ} σ i α =
+    (Lam (N-ob (qTM B) (Δ ⊹ A)
+      (N-ob α (Δ ⊹ A) (W₁Ren A (idRen Δ) , N-ob (uTM A) (Δ ⊹ A) (V Zv)))) [ varify σ ]
+      ≡⟨ Lam[] (N-ob (qTM B) (Δ ⊹ A)
+          (N-ob α (Δ ⊹ A) (W₁Ren A (idRen Δ) , N-ob (uTM A) (Δ ⊹ A) (V Zv)))) (varify σ) ⟩
+    Lam (N-ob (qTM B) (Δ ⊹ A)
+      (N-ob α (Δ ⊹ A) (W₁Ren A (idRen Δ) , N-ob (uTM A) (Δ ⊹ A) (V Zv)))
         [ W₁Tms A (varify σ) ⊕ V Zv ])
-     ≡⟨ (λ j → Lam (N-ob (qTM1 B) (Δ ⊹ A)
-          (N-ob α (Δ ⊹ A) (W₁Ren A (idRen Δ) , N-ob (uTM1 A) (Δ ⊹ A) (V Zv)))
+     ≡⟨ (λ j → Lam (N-ob (qTM B) (Δ ⊹ A)
+          (N-ob α (Δ ⊹ A) (W₁Ren A (idRen Δ) , N-ob (uTM A) (Δ ⊹ A) (V Zv)))
             [ Vlem1 σ (~ j) ⊕ V Zv ])) ⟩
-   Lam (N-ob (qTM1 B) (Δ ⊹ A)
-     (N-ob α (Δ ⊹ A) (W₁Ren A (idRen Δ) , N-ob (uTM1 A) (Δ ⊹ A) (V Zv)))
+   Lam (N-ob (qTM B) (Δ ⊹ A)
+     (N-ob α (Δ ⊹ A) (W₁Ren A (idRen Δ) , N-ob (uTM A) (Δ ⊹ A) (V Zv)))
        [ varify (W₂Ren A σ) ])
      ≡⟨ (λ j → Lam
-       (N-hom (qTM1 B) (W₂Ren A σ) (~ j)
-         (N-ob α (Δ ⊹ A) (W₁Ren A (idRen Δ) , N-ob (uTM1 A) (Δ ⊹ A) (V Zv))))) ⟩
+       (N-hom (qTM B) (W₂Ren A σ) (~ j)
+         (N-ob α (Δ ⊹ A) (W₁Ren A (idRen Δ) , N-ob (uTM A) (Δ ⊹ A) (V Zv))))) ⟩
    _
-     ≡⟨ (λ j → Lam (N-ob (qTM1 B) (Σ ⊹ A)
-       (N-hom α (W₂Ren A σ) (~ j) (W₁Ren A (idRen Δ) , N-ob (uTM1 A) (Δ ⊹ A) (V Zv))))) ⟩
+     ≡⟨ (λ j → Lam (N-ob (qTM B) (Σ ⊹ A)
+       (N-hom α (W₂Ren A σ) (~ j) (W₁Ren A (idRen Δ) , N-ob (uTM A) (Δ ⊹ A) (V Zv))))) ⟩
    _
-     ≡⟨ (λ j → Lam (N-ob (qTM1 B) (Σ ⊹ A) (N-ob α (Σ ⊹ A)
+     ≡⟨ (λ j → Lam (N-ob (qTM B) (Σ ⊹ A) (N-ob α (Σ ⊹ A)
        (lem j ,
-         N-hom (uTM1 A) (W₂Ren A σ) (~ j) (V Zv))))) ⟩
+         N-hom (uTM A) (W₂Ren A σ) (~ j) (V Zv))))) ⟩
    Lam
-      (N-ob (qTM1 B) (Σ ⊹ A)
+      (N-ob (qTM B) (Σ ⊹ A)
        (N-ob α (Σ ⊹ A)
         (σ ∘Ren W₁Ren A (idRen Σ) ,
-         N-ob (uTM1 A) (Σ ⊹ A) (V Zv [ varify (W₁Ren A σ) ⊕ V Zv ]))))
-     ≡⟨ (λ j → Lam (N-ob (qTM1 B) (Σ ⊹ A)
+         N-ob (uTM A) (Σ ⊹ A) (V Zv [ varify (W₁Ren A σ) ⊕ V Zv ]))))
+     ≡⟨ (λ j → Lam (N-ob (qTM B) (Σ ⊹ A)
        (N-ob α (Σ ⊹ A)
         (σ ∘Ren W₁Ren A (idRen Σ) ,
-         N-ob (uTM1 A) (Σ ⊹ A) (Zv[] (varify (W₁Ren A σ)) (V Zv) j))))) ⟩
+         N-ob (uTM A) (Σ ⊹ A) (Zv[] (varify (W₁Ren A σ)) (V Zv) j))))) ⟩
    Lam
-      (N-ob (qTM1 B) (Σ ⊹ A)
+      (N-ob (qTM B) (Σ ⊹ A)
        (N-ob α (Σ ⊹ A)
-        (σ ∘Ren W₁Ren A (idRen Σ) , N-ob (uTM1 A) (Σ ⊹ A) (V Zv))))
+        (σ ∘Ren W₁Ren A (idRen Σ) , N-ob (uTM A) (Σ ⊹ A) (V Zv))))
      ∎) (~ i) where
      lem : W₁Ren A (idRen Δ) ∘Ren (W₂Ren A σ) ≡ σ ∘Ren W₁Ren A (idRen Σ)
      lem =
@@ -294,35 +294,35 @@ module _ where
        σ ∘Ren W₁Ren A (idRen Σ)
          ∎
   
-  N-ob (uTM1 (Base X)) Γ t = t
-  N-hom (uTM1 (Base X)) σ = refl
-  N-ob (N-ob (uTM1 (A ⇒ B)) Γ t) Δ (σ , 𝓈) =
-    N-ob (uTM1 B) Δ (App (t [ varify σ ]) (N-ob (qTM1 A) Δ 𝓈))
-  N-hom (N-ob (uTM1 (A ⇒ B)) Γ t) {Δ} {Σ} σ i (τ , 𝓈) =
-    (N-ob (uTM1 B) Σ (App (t [ varify (τ ∘Ren σ) ]) (N-ob (qTM1 A) Σ (F-hom (interpTy A) σ 𝓈)))
-      ≡⟨ (λ j → N-ob (uTM1 B) Σ (App (t [ Vlem4 τ σ j ]) (N-hom (qTM1 A) σ j 𝓈))) ⟩
-    N-ob (uTM1 B) Σ (App (t [ varify τ ∘Tms varify σ ]) (N-ob (qTM1 A) Δ 𝓈 [ varify σ ]))
-      ≡⟨ (λ j → N-ob (uTM1 B) Σ (App ([][] t (varify τ) (varify σ) (~ j))
-        (N-ob (qTM1 A) Δ 𝓈 [ varify σ ]))) ⟩
-    N-ob (uTM1 B) Σ (App (t [ varify τ ] [ varify σ ]) (N-ob (qTM1 A) Δ 𝓈 [ varify σ ]))
-      ≡⟨ (λ j → N-ob (uTM1 B) Σ (App[] (t [ varify τ ]) (N-ob (qTM1 A) Δ 𝓈) (varify σ) (~ j))) ⟩
-    N-ob (uTM1 B) Σ (App (t [ varify τ ]) (N-ob (qTM1 A) Δ 𝓈) [ varify σ ])
-      ≡⟨ (λ j → N-hom (uTM1 B) σ j (App (t [ varify τ ]) (N-ob (qTM1 A) Δ 𝓈))) ⟩
-    F-hom (interpTy B) σ (N-ob (uTM1 B) Δ (App (t [ varify τ ]) (N-ob (qTM1 A) Δ 𝓈)))
+  N-ob (uTM (Base X)) Γ t = t
+  N-hom (uTM (Base X)) σ = refl
+  N-ob (N-ob (uTM (A ⇒ B)) Γ t) Δ (σ , 𝓈) =
+    N-ob (uTM B) Δ (App (t [ varify σ ]) (N-ob (qTM A) Δ 𝓈))
+  N-hom (N-ob (uTM (A ⇒ B)) Γ t) {Δ} {Σ} σ i (τ , 𝓈) =
+    (N-ob (uTM B) Σ (App (t [ varify (τ ∘Ren σ) ]) (N-ob (qTM A) Σ (F-hom (interpTy A) σ 𝓈)))
+      ≡⟨ (λ j → N-ob (uTM B) Σ (App (t [ Vlem4 τ σ j ]) (N-hom (qTM A) σ j 𝓈))) ⟩
+    N-ob (uTM B) Σ (App (t [ varify τ ∘Tms varify σ ]) (N-ob (qTM A) Δ 𝓈 [ varify σ ]))
+      ≡⟨ (λ j → N-ob (uTM B) Σ (App ([][] t (varify τ) (varify σ) (~ j))
+        (N-ob (qTM A) Δ 𝓈 [ varify σ ]))) ⟩
+    N-ob (uTM B) Σ (App (t [ varify τ ] [ varify σ ]) (N-ob (qTM A) Δ 𝓈 [ varify σ ]))
+      ≡⟨ (λ j → N-ob (uTM B) Σ (App[] (t [ varify τ ]) (N-ob (qTM A) Δ 𝓈) (varify σ) (~ j))) ⟩
+    N-ob (uTM B) Σ (App (t [ varify τ ]) (N-ob (qTM A) Δ 𝓈) [ varify σ ])
+      ≡⟨ (λ j → N-hom (uTM B) σ j (App (t [ varify τ ]) (N-ob (qTM A) Δ 𝓈))) ⟩
+    F-hom (interpTy B) σ (N-ob (uTM B) Δ (App (t [ varify τ ]) (N-ob (qTM A) Δ 𝓈)))
       ∎) i
-  N-ob (N-hom (uTM1 (A ⇒ B)) σ i t) Γ (τ , 𝓈) =
-    (N-ob (uTM1 B) Γ (App (t [ varify σ ] [ varify τ ]) (N-ob (qTM1 A) Γ 𝓈))
-      ≡⟨ (λ j → N-ob (uTM1 B) Γ (App ([][] t (varify σ) (varify τ) j) (N-ob (qTM1 A) Γ 𝓈))) ⟩
-    N-ob (uTM1 B) Γ (App (t [ varify σ ∘Tms varify τ ]) (N-ob (qTM1 A) Γ 𝓈))
-      ≡⟨ (λ j → N-ob (uTM1 B) Γ (App (t [ Vlem4 σ τ (~ j) ]) (N-ob (qTM1 A) Γ 𝓈))) ⟩
-    N-ob (uTM1 B) Γ (App (t [ varify (σ ∘Ren τ) ]) (N-ob (qTM1 A) Γ 𝓈))
+  N-ob (N-hom (uTM (A ⇒ B)) σ i t) Γ (τ , 𝓈) =
+    (N-ob (uTM B) Γ (App (t [ varify σ ] [ varify τ ]) (N-ob (qTM A) Γ 𝓈))
+      ≡⟨ (λ j → N-ob (uTM B) Γ (App ([][] t (varify σ) (varify τ) j) (N-ob (qTM A) Γ 𝓈))) ⟩
+    N-ob (uTM B) Γ (App (t [ varify σ ∘Tms varify τ ]) (N-ob (qTM A) Γ 𝓈))
+      ≡⟨ (λ j → N-ob (uTM B) Γ (App (t [ Vlem4 σ τ (~ j) ]) (N-ob (qTM A) Γ 𝓈))) ⟩
+    N-ob (uTM B) Γ (App (t [ varify (σ ∘Ren τ) ]) (N-ob (qTM A) Γ 𝓈))
       ∎) i
-  N-hom (N-hom (uTM1 (A ⇒ B)) {Σ} {Ω} σ i t) {Γ} {Δ} τ j (μ , 𝓈) =
+  N-hom (N-hom (uTM (A ⇒ B)) {Σ} {Ω} σ i t) {Γ} {Δ} τ j (μ , 𝓈) =
     isSet→SquareP (λ i j → snd (F-ob (interpTy B) Δ))
-      (λ k → N-hom (N-ob (uTM1 (A Ty.⇒ B)) Ω (t [ varify σ ])) τ k (μ , 𝓈))
-      (λ k → N-hom (F-hom (SEM1 (A Ty.⇒ B)) σ (N-ob (uTM1 (A Ty.⇒ B)) Σ t)) τ k (μ , 𝓈))
-      (λ k → N-ob (N-hom (uTM1 (A Ty.⇒ B)) σ k t) Δ (μ ∘Ren τ , F-hom (interpTy A) τ 𝓈))
-      (λ k → F-hom (interpTy B) τ (N-ob (N-hom (uTM1 (A Ty.⇒ B)) σ k t) Γ (μ , 𝓈))) i j
+      (λ k → N-hom (N-ob (uTM (A Ty.⇒ B)) Ω (t [ varify σ ])) τ k (μ , 𝓈))
+      (λ k → N-hom (F-hom (SEM1 (A Ty.⇒ B)) σ (N-ob (uTM (A Ty.⇒ B)) Σ t)) τ k (μ , 𝓈))
+      (λ k → N-ob (N-hom (uTM (A Ty.⇒ B)) σ k t) Δ (μ ∘Ren τ , F-hom (interpTy A) τ 𝓈))
+      (λ k → F-hom (interpTy B) τ (N-ob (N-hom (uTM (A Ty.⇒ B)) σ k t) Γ (μ , 𝓈))) i j
 
 module _ where
   open Precategory
@@ -424,8 +424,8 @@ module _ where
 
   open SampleSyn
 
-  test1 = N-ob (uTM1 (ChurchType (Base 'A'))) ∅ TwoPlusTwo
-  test2 = N-ob (qTM1 (ChurchType (Base 'A'))) ∅ test1
+  test1 = N-ob (uTM (ChurchType (Base 'A'))) ∅ TwoPlusTwo
+  test2 = N-ob (qTM (ChurchType (Base 'A'))) ∅ test1
 
   test3 = includeNormal (norm (TwoPlusTwo {Base 'A'}))
 
@@ -433,7 +433,4 @@ module _ where
   cong1 = Zv[] (varify (W₁Ren (Base 'B') (idRen (∅ ⊹ Base 'A')))) (V Zv)
 
   test4 = ap (includeNormal ∘ norm) cong1
-
-  {-test1 = SEM (ChurchType (Base 'A')) .F-ob ∅
-  test2 = SEM (ChurchType (Base 'A')) .F-hom-}
 

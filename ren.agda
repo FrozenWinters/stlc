@@ -114,89 +114,6 @@ Wlem5Ren (σ ⊕R v) τ i = Wlem5Ren σ τ i ⊕R Wlem2Ren v τ i
 isSetRen : {Γ Δ : Ctx} → isSet (Ren Γ Δ)
 isSetRen = {!!}
 
-{-
-infix 30 _[_]Tm _[_]Tms
-_[_]Tm : {Γ Δ : Ctx} {A : Ty} → Tm Δ A → Ren Γ Δ → Tm Γ A
-
-{-# TERMINATING #-}
-_[_]Tms : {Γ Δ Σ : Ctx} → Tms Δ Σ → Ren Γ Δ → Tms Γ Σ
-! [ σ ]Tms = !
-(τ ⊕ t) [ σ ]Tms = τ [ σ ]Tms ⊕ (t [ σ ]Tm)
-
-Wlem0 : {Γ Δ : Ctx} {A B : Ty} (t : Tm Δ B) (σ : Ren Γ Δ) →
-  W₁ A (t [ σ ]Tm) ≡ t [ W₁Ren A σ ]Tm
-Wlem1 : {Γ Δ  Σ : Ctx} {A : Ty} (σ : Tms Δ Σ) (τ : Ren Γ Δ) →
-  W₁Tms A (σ [ τ ]Tms) ≡ σ [ W₁Ren A τ ]Tms
-Wlem2 : {Γ Δ Σ : Ctx} {A : Ty} (σ : Tms Δ Σ) (τ : Ren Γ Δ) (v : Var Γ A) →
-  W₁Tms A σ [ τ ⊕R v ]Tms ≡ σ [ τ ]Tms
-Wlem3 : {Γ Δ Σ : Ctx} {A : Ty} (σ : Tms Δ Σ) (τ : Ren Γ Δ) →
-  W₁Tms A σ [ W₂Ren A τ ]Tms ≡ σ [ W₁Ren A τ ]Tms
-
-V v [ σ ]Tm = V (v [ σ ]R)
-Lam {A = A} t [ σ ]Tm = Lam (t [ W₂Ren A σ ]Tm)
-App t s [ σ ]Tm = App (t [ σ ]Tm) (s [ σ ]Tm)
-(t [ τ ]) [ σ ]Tm = t [ τ [ σ ]Tms ]
-W₁ A t [ σ ⊕R v ]Tm = t [ σ ]Tm
-β {A = A} t s i [ σ ]Tm = {!β (t [ W₂Ren A σ ]Tm) (s [ σ ]Tm)!}
-η t i [ σ ]Tm = {!η (t [ σ ]Tm)!}
-Zv[] τ t i [ σ ]Tm = Zv[] (τ [ σ ]Tms) (t [ σ ]Tm) i
-Sv[] v τ t i [ σ ]Tm = Sv[] v (τ [ σ ]Tms) (t [ σ ]Tm) i
-Lam[] {Γ} {Δ} {A} {B} t τ i [ σ ]Tm =
-  (Lam t [ τ [ σ ]Tms ]
-    ≡⟨ Lam[] t (τ [ σ ]Tms) ⟩
-  Lam (t [ W₁Tms A (τ [ σ ]Tms) ⊕ V Zv ])
-    ≡⟨ (λ i → Lam (t [ Wlem1 τ σ i ⊕ V Zv ])) ⟩
-  Lam (t [ τ [ W₁Ren A σ ]Tms ⊕ V Zv ])
-    ≡⟨ (λ i → Lam (t [ Wlem3 τ σ (~ i) ⊕ V Zv ])) ⟩
-  Lam (t [ W₁Tms A τ [ W₂Ren A σ ]Tms ⊕ V Zv ])
-    ∎) i
-App[] t s σ₁ i [ σ ]Tm = {!!}
-W₁V v i [ σ ⊕R w ]Tm = V (v [ σ ]R)
-W₁Lam t i [ σ ⊕R v ]Tm = {!!}
-W₁App t s i [ σ ⊕R v ]Tm = App (t [ σ ]Tm) (s [ σ ]Tm)
-W₁[] t τ i [ σ ]Tm = {!!}
-isSetTm t s x y i i₁ [ σ ]Tm = {!!}
-
-Wlem0 (V x) σ = {!!}
-Wlem0 {A = A} (Lam {Γ} {B} {C} t) σ =
-  {!W₁Lam (t [ W₂Ren B σ ]Tm)!}
-Wlem0 {A = A} (App t s) σ =
-  W₁ A (App (t [ σ ]Tm) (s [ σ ]Tm))
-    ≡⟨ W₁App (t [ σ ]Tm) (s [ σ ]Tm) ⟩
-  App (W₁ A (t [ σ ]Tm)) (W₁ A (s [ σ ]Tm))
-    ≡⟨ (λ i → App (Wlem0 t σ i) (Wlem0 s σ i)) ⟩
-  App (t [ W₁Ren A σ ]Tm) (s [ W₁Ren A σ ]Tm)
-    ∎
-Wlem0 {A = A} (t [ τ ]) σ =
-  W₁ A (t [ τ [ σ ]Tms ])
-    ≡⟨ W₁[] t (τ [ σ ]Tms) ⟩
-  t [ W₁Tms A (τ [ σ ]Tms) ]
-    ≡⟨ ap (t [_]) (Wlem1 τ σ) ⟩
-  t [ τ [ W₁Ren A σ ]Tms ]
-    ∎
-Wlem0 (W₁ A t) (σ ⊕R v) = Wlem0 t σ
-Wlem0 (β t t₁ i) σ = {!!}
-Wlem0 (η t i) σ = {!!}
-Wlem0 (Zv[] σ₁ t i) σ = {!!}
-Wlem0 (Sv[] v σ₁ t i) σ = {!!}
-Wlem0 (Lam[] t σ₁ i) σ = {!!}
-Wlem0 (App[] t t₁ σ₁ i) σ = {!!}
-Wlem0 (W₁V v i) σ = {!!}
-Wlem0 (W₁Lam t i) σ = {!!}
-Wlem0 (W₁App t t₁ i) σ = {!!}
-Wlem0 (W₁[] t τ i) σ = {!!}
-Wlem0 (isSetTm t t₁ x y i i₁) σ = {!!}
-
-Wlem1 ! τ = refl
-Wlem1 (σ ⊕ t) τ i = Wlem1 σ τ i ⊕ Wlem0 t τ i
-
-Wlem2 ! τ v = refl
-Wlem2 (σ ⊕ t) τ v = ap (_⊕ t [ τ ]Tm ) (Wlem2 σ τ v)
-
-Wlem3 ! τ = refl
-Wlem3 {A = A} (σ ⊕ t) τ = ap (_⊕ t [ W₁Ren A τ ]Tm) (Wlem3 σ τ)
--}
-
 module _ where
   open Precategory renaming (id to 𝒾𝒹)
   open Functor
@@ -420,11 +337,3 @@ includeNeutrals (MS ⊕NE M) = includeNeutrals MS ⊕ includeNeutral M
 includeNormals : {Γ Δ : Ctx} → Nfs Γ Δ → Tms Γ Δ
 includeNormals !NF = !
 includeNormals (NS ⊕NF N) = includeNormals NS ⊕ includeNormal N
-
-{-
-module _ where
-  open Precategory
-  open Functor
-
-  ιNE : Functor 
--}

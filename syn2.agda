@@ -88,10 +88,6 @@ data Tm where
     t [ σ ] [ τ ] ≡ t [ σ ∘Tms τ ]
   [id] : {Γ : Ctx} {A : Ty} (t : Tm Γ A) →
     t [ idTms Γ ] ≡ t
-{-
-  W₁[]₁ : {Γ Δ : Ctx} {A B : Ty} (t : Tm Δ B) (σ : Tms Γ Δ) (s : Tm Γ A) →
-    W₁ A t [ σ ⊕ s ] ≡ t [ σ ]
--}
 
   W₁V : {Γ : Ctx} {A B : Ty} (v : Var Γ B) →
     W₁ A (V v) ≡ V (Sv v)
@@ -99,10 +95,6 @@ data Tm where
     W₁ A (Lam t) ≡ Lam (t [ W₂Tms B (W₁Tms A (idTms Γ)) ])
   W₁App : {Γ : Ctx} {A B C : Ty} (t : Tm Γ (B ⇒ C)) (s : Tm Γ B) →
     W₁ A (App t s) ≡ App (W₁ A t) (W₁ A s)
-{-
-  W₁[]₂ : {Γ Δ : Ctx} {A B : Ty} (t : Tm Δ B) (σ : Tms Γ Δ) →
-    W₁ A (t [ σ ]) ≡ t [ W₁Tms A σ ]
--}
 
   isSetTm : {Γ : Ctx} {A : Ty} → isSet (Tm Γ A)
 
@@ -197,75 +189,3 @@ module SampleSyn where
 
   TwoPlusTwo : {A : Ty} → Tm ∅ (ChurchType A)
   TwoPlusTwo = App (App Plus ChurchTwo) ChurchTwo
-
-{-
-
-
-Vlem2 : {Γ : Ctx} {A : Ty} → W₂Tms A idTms ≡ idTms {Γ ⊹ A}
-Vlem2 {∅} = refl
-Vlem2 {Γ ⊹ B} {A} i = Vlem1 (W₁Ren B idRen) (~ i) ⊕ W₁V Zv i ⊕ V Zv
-
-Wlem1 : {Γ Δ Σ : Ctx} {A : Ty} (σ : Tms Δ Σ) (τ : Tms Γ Δ) (t : Tm Γ A) →
-  W₁Tms A σ ∘Tms (τ ⊕ t) ≡ σ ∘Tms τ
-Wlem1 ! τ t = refl
-Wlem1 (σ ⊕ s) τ t i = Wlem1 σ τ t i ⊕ W₁[]₁ s τ t i
-
-Wlem2 : {Γ Δ Σ : Ctx} {A : Ty} (σ : Tms Δ Σ) (τ : Tms Γ Δ) →
-  σ ∘Tms W₁Tms A τ ≡ W₁Tms A (σ ∘Tms τ)
-Wlem2 ! τ = refl
-Wlem2 {A = A} (σ ⊕ t) τ i = Wlem2 σ τ i ⊕ W₁[]₂ t τ (~ i)
-
-Wlem3 : {Γ Δ Σ : Ctx} {A : Ty} (σ : Tms Δ Σ) (τ : Tms Γ Δ) →
-  W₁Tms A σ ∘Tms W₂Tms A τ ≡ W₁Tms A (σ ∘Tms τ)
-Wlem3 {A = A} σ τ =
-  W₁Tms A σ ∘Tms (W₁Tms A τ ⊕ V Zv)
-    ≡⟨ Wlem1 σ (W₁Tms A τ) (V Zv) ⟩
-  σ ∘Tms W₁Tms A τ
-    ≡⟨ Wlem2 σ τ ⟩
-  W₁Tms A (σ ∘Tms τ)
-    ∎
-
-[id]Var : {Γ : Ctx} {A : Ty} (v : Var Γ A) → V v [ idTms ] ≡ V v
-[id]Var {A = A} Zv = Zv[] (varify (W₁Ren A idRen)) (V Zv)
-[id]Var {Γ ⊹ B} {A} (Sv v) =
-  V (Sv v) [ varify (W₁Ren B idRen) ⊕ V Zv ]
-    ≡⟨ (λ i → Sv[] v (Vlem1 idRen i) (V Zv) i) ⟩
-  V v [ W₁Tms B idTms ]
-    ≡⟨ W₁[]₂ (V v) idTms ⁻¹ ⟩
-  W₁ B (V v [ idTms ])
-    ≡⟨ ap (W₁ B) ([id]Var v)⟩
-  W₁ B (V v)
-    ≡⟨ W₁V v ⟩
-  V (Sv v)
-    ∎
-
-[id] : {Γ : Ctx} {A : Ty} (t : Tm Γ A) → t [ idTms ] ≡ t
-[id] (V v) = [id]Var v
-[id] (Lam t) = {!!}
-[id] (App t s) = {!!}
-[id] (t [ σ ]) = {!!}
-[id] (W₁ A t) =
-  W₁ A t [ varify (W₁Ren A idRen) ⊕ V Zv ]
-    ≡⟨ W₁[]₁ t (varify (W₁Ren A idRen)) (V Zv) ⟩
-  t [ varify (W₁Ren A idRen) ]
-    ≡⟨ ap (t [_]) (Vlem1 idRen) ⟩
-  t [ W₁Tms A idTms ]
-    ≡⟨ W₁[]₂ t idTms ⁻¹ ⟩
-  W₁ A (t [ idTms ])
-    ≡⟨ ap (W₁ A) ([id] t) ⟩
-  W₁ A t
-    ∎
-[id] (β t s i) = {!!}
-[id] (η t i) = {!!}
-[id] (Zv[] σ t i) = {!!}
-[id] (Sv[] v σ t i) = {!!}
-[id] (Lam[] t σ i) = {!!}
-[id] (App[] t s σ i) = {!!}
-[id] ([][] t σ τ i) = {!!}
-[id] (W₁[]₁ t σ s i) = {!!}
-[id] (W₁V v i) = {!!}
-[id] (W₁Lam t i) = {!!}
-[id] (W₁App t s i) = {!!}
-[id] (W₁[]₂ t σ i) = {!!}
-[id] (isSetTm t s p q i j) = {!!}
--}
