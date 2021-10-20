@@ -115,10 +115,7 @@ module PShCartesian {ℓ : Level} (𝒞 : Precategory ℓ ℓ) ⦃ C-cat : isCat
     _★_ = C ._⋆_
 
   よ : ob C → ob (PSh 𝒞)
-  よ = Yoneda.yo C {-where
-    instance
-      C-cat : isCategory C
-      C-cat = snd 𝒞-}
+  よ = Yoneda.yo C
 
   -- Terminal Object
 

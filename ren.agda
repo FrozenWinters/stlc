@@ -94,8 +94,6 @@ Wlem5Ren : {Γ Δ Σ : Ctx} {A : Ty} (σ : Ren Δ Σ) (τ : Ren Γ Δ) →
 Wlem5Ren !R τ = refl
 Wlem5Ren (σ ⊕R v) τ i = Wlem5Ren σ τ i ⊕R Wlem2Ren v τ i
 
-
-
 [id]Ren : {Γ : Ctx} {A : Ty} (v : Var Γ A) →
   v [ idRen Γ ]R ≡ v
 [id]Ren Zv = refl

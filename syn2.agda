@@ -46,7 +46,6 @@ idRen : (Γ : Ctx) → Ren Γ Γ
 idRen ∅ = !R
 idRen (Γ ⊹ A) = W₂Ren A (idRen Γ)
 
-
 data Tm : Ctx → Ty → Set
 data Tms : Ctx → Ctx → Set
 
@@ -130,6 +129,21 @@ Vlem2 {Γ ⊹ B} {A} i = Vlem1 (W₁Ren B (idRen Γ)) (~ i) ⊕ W₁V Zv i ⊕ V
   σ ∘Tms idTms Γ ≡ σ
 ∘IdR ! = refl
 ∘IdR (σ ⊕ t) i = ∘IdR σ i ⊕ [id] t i
+
+∘IdL : {Γ Δ : Ctx} (σ : Tms Γ Δ) →
+  idTms Δ ∘Tms σ ≡ σ
+∘IdL ! = refl
+∘IdL {Δ = Δ ⊹ A} (σ ⊕ t) =
+  varify (W₁Ren A (idRen Δ)) ∘Tms (σ ⊕ t) ⊕ V Zv [ σ ⊕ t ]
+    ≡⟨ (λ i → Vlem1 (idRen Δ) i ∘Tms (σ ⊕ t) ⊕ Zv[] σ t i) ⟩
+  W₁Tms A (varify (idRen Δ)) ∘Tms (σ ⊕ t) ⊕ t
+    ≡⟨ {!!} ⟩
+  σ ⊕ t
+    ∎
+
+Wlem0 : {Γ Δ : Ctx} {A B : Ty} (t : Tm Δ B) (σ : Tms Γ Δ) (s : Tm Γ A) →
+  W₁ A t [ σ ⊕ s ] ≡ t [ σ ]
+Wlem0 t σ s = {!!}
 
 -- encode-decode argument to show that Tms is a set
 module TmsPath where
