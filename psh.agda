@@ -1,11 +1,12 @@
-{-# OPTIONS --cubical #-}
+{-# OPTIONS --cubical --allow-unsolved-metas #-}
 
 module psh where
 
-open import Agda.Primitive using (Level; lzero; lsuc; _⊔_)
-open import Cubical.Core.Everything
+open import contextual
+open import cartesian2
+open import cartesian3
+
 open import Cubical.Data.Sigma
-open import Cubical.Foundations.Everything renaming (cong to ap)
 open import Cubical.Categories.Category
 open import Cubical.Categories.Functor
 open import Cubical.Categories.NaturalTransformation
@@ -13,6 +14,8 @@ open import Cubical.Categories.Presheaf
 open import Cubical.Categories.Instances.Sets hiding (isSetLift)
 open import Cubical.Data.Unit as ⊤ renaming (Unit to ⊤)
 open import Cubical.Data.Empty as ⊥
+
+-- In this file, we exhibit the Cartesian Closed structure of presheaves
 
 private
   isSetLift : ∀ {ℓ₁ ℓ₂} {A : Set ℓ₁} → isSet A → isSet (Lift {ℓ₁} {ℓ₂} A)
@@ -42,7 +45,7 @@ module SETCartesian {ℓ : Level} where
 PSh : ∀ {ℓ} (𝒞 : Precategory ℓ ℓ) → ⦃ isCategory 𝒞 ⦄ → Precategory (lsuc ℓ) ℓ
 PSh {ℓ} 𝒞  = PreShv 𝒞 ℓ
 
-module PShCartesian {ℓ : Level} (𝒞 : Precategory ℓ ℓ) ⦃ C-cat : isCategory 𝒞 ⦄  where
+module PShCartesian {ℓ : Level} (𝒞 : Precategory ℓ ℓ) ⦃ C-cat : isCategory 𝒞 ⦄ where
   open Precategory
   open Functor
   open NatTrans
@@ -186,39 +189,22 @@ module PShCartesian {ℓ : Level} (𝒞 : Precategory ℓ ℓ) ⦃ C-cat : isCat
   eval : (F G : ob (PSh 𝒞)) → PSh 𝒞 [ ×PSh (⇒PSh F G) F , G ]
   eval F G = AppPSh (×PSh (⇒PSh F G) F) F G (π₁PSh (⇒PSh F G) F) (π₂PSh (⇒PSh F G) F)
 
-  Λnat₁PSh : (F F' G H : ob (PSh 𝒞)) (α : PSh 𝒞 [ F , F' ]) (β : PSh 𝒞 [ ×PSh F' G , H ]) →
+  ΛnatPSh : (F F' G H : ob (PSh 𝒞)) (α : PSh 𝒞 [ F , F' ]) (β : PSh 𝒞 [ ×PSh F' G , H ]) →
     ΛPSh F G H (β 𝒩∘ PairPSh (α 𝒩∘ π₁PSh F G) (π₂PSh F G)) ≡ ΛPSh F' G H β 𝒩∘ α
-  Λnat₁PSh F F' G H α β i .N-ob x t .N-ob y (a , s) = N-ob β y (N-hom α a i t , s)
-  Λnat₁PSh F F' G H α β i .N-ob x t .N-hom {x₁} {x₂} a j (b , s) =
+  ΛnatPSh F F' G H α β i .N-ob x t .N-ob y (a , s) = N-ob β y (N-hom α a i t , s)
+  ΛnatPSh F F' G H α β i .N-ob x t .N-hom {x₁} {x₂} a j (b , s) =
     isSet→SquareP (λ i j → snd (F-ob H x₂))
       (λ k →
         N-hom (N-ob (ΛPSh F G H (β 𝒩∘ PairPSh (α 𝒩∘ π₁PSh F G) (π₂PSh F G))) x t) a k (b , s))
       (λ k → N-hom (N-ob (ΛPSh F' G H β 𝒩∘ α) x t) a k (b , s))
       (λ k → N-ob β x₂ (N-hom α (a ★ b) k t , F-hom G a s))
       (λ k → F-hom H a (N-ob β x₁ (N-hom α b k t , s))) i j
-  Λnat₁PSh F F' G H α β i .N-hom {x₁} {x₂} a j t =
+  ΛnatPSh F F' G H α β i .N-hom {x₁} {x₂} a j t =
     isSet→SquareP (λ i j → isSetNat)
       (λ k → N-hom (ΛPSh F G H (β 𝒩∘ PairPSh (α 𝒩∘ π₁PSh F G) (π₂PSh F G))) a k t)
       (λ k → N-hom (ΛPSh F' G H β 𝒩∘ α) a k t)
-      (λ k → N-ob (Λnat₁PSh F F' G H α β k) x₂ (F-hom F a t))
-      (λ k → F-hom (⇒PSh G H) a (N-ob (Λnat₁PSh F F' G H α β k) x₁ t)) i j
-
-  Λnat₂PSh : (F G H H' : ob (PSh 𝒞)) (α : PSh 𝒞 [ H , H' ]) (β : PSh 𝒞 [ ×PSh F G , H ]) →
-    ΛPSh F G H' (α 𝒩∘ β) ≡ ΛPSh (⇒PSh G H) G H' (α 𝒩∘ eval G H) 𝒩∘ ΛPSh F G H β
-  Λnat₂PSh F G H H' α β i .N-ob x t .N-ob y (a , s) =
-    N-ob α y (N-ob β y (F-hom F (⋆IdL C a (~ i)) t , s))
-  Λnat₂PSh F G H H' α β i .N-ob x t .N-hom {x₁} {x₂} a j (b , s) =
-    isSet→SquareP (λ i j → snd (F-ob H' x₂))
-      (λ k → N-hom (N-ob (ΛPSh F G H' (α 𝒩∘ β)) x t) a k (b , s))
-      (λ k → N-hom (N-ob (ΛPSh (⇒PSh G H) G H' (α 𝒩∘ eval G H) 𝒩∘ ΛPSh F G H β) x t) a k (b , s))
-      (λ k → N-ob α x₂ (N-ob β x₂ (F-hom F (⋆IdL C (a ★ b) (~ k)) t , F-hom G a s)))
-      (λ k → F-hom H' a (N-ob α x₁ (N-ob β x₁ (F-hom F (⋆IdL C b (~ k)) t , s)))) i j
-  Λnat₂PSh F G H H' α β i .N-hom {x₁} {x₂} a j t =
-    isSet→SquareP (λ i j → isSetNat)
-     (λ k → N-hom (ΛPSh F G H' (α 𝒩∘ β)) a k t)
-     (λ k → N-hom (ΛPSh (⇒PSh G H) G H' (α 𝒩∘ eval G H) 𝒩∘ ΛPSh F G H β) a k t)
-     (λ k → N-ob (Λnat₂PSh F G H H' α β k) x₂ (F-hom F a t))
-     (λ k → F-hom (⇒PSh G H') a (N-ob (Λnat₂PSh F G H H' α β k) x₁ t)) i j
+      (λ k → N-ob (ΛnatPSh F F' G H α β k) x₂ (F-hom F a t))
+      (λ k → F-hom (⇒PSh G H) a (N-ob (ΛnatPSh F F' G H α β k) x₁ t)) i j
 
   AppβPSh : (F G H : ob (PSh 𝒞)) (α : PSh 𝒞 [ ×PSh F G , H ]) (β : PSh 𝒞 [ F , G ]) →
     AppPSh F G H (ΛPSh F G H α) β ≡ α 𝒩∘ (PairPSh (idTrans F) β)
@@ -252,3 +238,138 @@ module PShCartesian {ℓ : Level} (𝒞 : Precategory ℓ ℓ) ⦃ C-cat : isCat
       (λ k → N-hom α a k t)
       (λ k → N-ob (AppηPSh F G H α k) y₂ (F-hom F a t))
       (λ k → F-hom (⇒PSh G H) a (N-ob (AppηPSh F G H α k) y₁ t)) i j
+
+module _ {ℓ : Level} {𝒞 : Precategory ℓ ℓ} ⦃ C-cat : isCategory 𝒞 ⦄ where
+  open PShCartesian 𝒞
+  open Cartesian
+
+  instance
+    PShCat : isCategory (PSh 𝒞)
+    PShCat = isCatPreShv {C = 𝒞}
+
+  instance
+    PShCart : Cartesian (PSh 𝒞)
+    PShCart .C-1 = 1PSh
+    PShCart .C-! = !PSh
+    PShCart .C-!η = !ηPSh
+    PShCart .C-× = ×PSh
+    PShCart .C-pair = PairPSh
+    PShCart .C-π₁ = π₁PSh
+    PShCart .C-π₂ = π₂PSh
+    PShCart .C-π₁β = π₁βPSh
+    PShCart .C-π₂β = π₂βPSh
+    PShCart .C-πη = πηPSh
+    PShCart .C-⇒ = ⇒PSh
+    PShCart .C-Λ = ΛPSh
+    PShCart .C-App = AppPSh
+    PShCart .C-Λnat = ΛnatPSh
+    PShCart .C-Appβ = AppβPSh
+    PShCart .C-Appη F G H α = AppηPSh F G H α ⁻¹
+
+module _ {ℓ : Level} (𝒞 : Precategory ℓ ℓ) ⦃ C-cat : isCategory 𝒞 ⦄ where
+   open CartToCCC (PSh 𝒞)
+
+   𝒫𝒮𝒽 = ambCC
+
+module _ {ℓ : Level} {𝒞 : Precategory ℓ ℓ} ⦃ C-cat : isCategory 𝒞 ⦄ where
+   open CartToCCC (PSh 𝒞)
+
+   instance
+     𝒫𝒮𝒽CCC = ambCCC
+
+   {-⇓PSh = ⇓ctx
+   ⇓PShMor = ⇓tms-}
+
+open import ren2
+
+-- Unification times blow up if this module gets paramterised!
+module PShFam {-{ℓ : Level} (𝒞 : Contextual ℓ ℓ)-} where
+  private
+    --ren = Contextual.ambCat ρεν
+    module C = Contextual ρεν
+    module PC = Contextual (𝒫𝒮𝒽 REN ⦃ C.isCatAmbCat ⦄ ⦃ PShCat ⦄)
+
+  open Contextual (𝒫𝒮𝒽 REN ⦃ C.isCatAmbCat ⦄ ⦃ PShCat ⦄)
+  open Precategory (PSh REN) hiding (_∘_)
+  open CartToCCC (PSh REN) ⦃ PShCat ⦄ ⦃ PShCart ⦄
+  open CCC (ambCCC)
+
+  private
+    infixr 20 _𝒩∘_
+    _𝒩∘_ = comp' (PSh REN)
+
+  
+
+  {-PresheafBundle = RL (ob × ob)
+
+  PBfst : PresheafBundle → ctx
+  PBfst = mapRL fst
+
+  PBsnd : PresheafBundle → ctx
+  PBsnd = mapRL snd
+
+  TransBundle : PresheafBundle → Type lzero
+  TransBundle ∅ = ⊤
+  TransBundle (PS ⊹ (A , B)) = TransBundle PS × Hom[ A , B ]-}
+
+  PresheafFamily = C.ty → ob
+  PresheavesFamily = C.ctx → ctx
+
+  plurify : PresheafFamily → PresheavesFamily
+  plurify 𝒫 = mapRL 𝒫
+
+  TransFamily : (𝒫 𝒬 : PresheafFamily) → Type lzero
+  TransFamily 𝒫 𝒬 = (A : C.ty) → Hom[ 𝒫 A , 𝒬 A ]
+
+  {-TFtoTB : {𝒫 𝒬 : PresheafFamily} (𝒜 : TransFamily 𝒫 𝒬) (Γ : C.ctx) →
+    TransBundle (mapRL (λ A → 𝒫 A , 𝒬 A) Γ)
+  TFtoTB 𝒜 ∅ = tt
+  TFtoTB 𝒜 (Γ ⊹ A) = TFtoTB 𝒜 Γ , 𝒜 A-}
+
+  
+
+  infixl 30 _×tm_
+  _×tm_ : {Γ Δ : ctx} {A B : ty} → tms Γ Δ → Hom[ A , B ] → tms (Γ ⊹ A) (Δ ⊹ B)
+  _×tm_ {Γ} σ t = σ ⊚ π ⊕ (t 𝒩∘ (𝑧 {Γ}))
+  
+  weaveTrans : {𝒫 𝒬 : PresheafFamily} (𝒜 : TransFamily 𝒫 𝒬) →
+    (Γ : C.ctx) → tms (plurify 𝒫 Γ) (plurify 𝒬 Γ)
+  weaveTrans 𝒜 ∅ = !
+  weaveTrans 𝒜 (Γ ⊹ A) = weaveTrans 𝒜 Γ ×tm 𝒜 A
+
+  ×tmLem : {Γ Δ Σ : ctx} {A B : ty} (σ : tms Δ Σ) (t : Hom[ A , B ])
+    (τ : tms Γ Δ) (s : tm Γ A ) →
+    (σ ×tm t) ⊚ (τ ⊕ s) ≡ (σ ⊚ τ) ⊕ (t 𝒩∘ s)
+  ×tmLem {Γ} {Δ} σ t τ s =
+    σ ⊚ π ⊕ (t 𝒩∘ 𝑧 {Δ}) ⊚ (τ ⊕ s)
+      ≡⟨ ⊕⊚ (σ ⊚ π) (t 𝒩∘ 𝑧 {Δ}) (τ ⊕ s) ⟩
+    σ ⊚ π ⊚ (τ ⊕ s) ⊕ (t 𝒩∘ 𝑧 {Δ}) PC.⟦ τ ⊕ s ⟧
+      ≡⟨ (λ i → ⊚Assoc σ π (τ ⊕ s) i ⊕ ⊚πlem t τ s i) ⟩
+    σ ⊚ (π ⊚ (τ ⊕ s)) ⊕ (t 𝒩∘ s)
+      ≡⟨ (λ i → σ ⊚ (πβ τ s i) ⊕ (t 𝒩∘ s)) ⟩
+    σ ⊚ τ ⊕ (t 𝒩∘ s)
+      ∎
+
+  ⇓PSh = ⇓ctx
+  ⇓PShMor = ⇓tms
+
+  W₁PSh = W₁tm
+  W₁PShs = W₁tms
+
+  {-πηPSh : {Γ : ctx} {A B : ty} →
+    π {Γ ⊹ B} {A} ≡ W₁PShs (Γ ⊹ B) A π ⊕ (W₁PSh (Γ ⊹ B) A (𝑧 {Γ}))
+  πηPSh {Γ} {A} {B} = ap (W₁PShs (Γ ⊹ B) A) (𝒾𝒹η ⁻¹)-}
+
+  --πηPSh = πη
+    
+
+  {-data MorLst (𝒫 𝒬 : PresheafFamily) : (C.ctx) → Type ℓ where
+    !! : MorLst 𝒫 𝒬 ∅
+    _⊗_ : {Γ : C.ctx} {A : C.ty} → MorLst 𝒫 𝒬 Γ → Hom[ 𝒫 A , 𝒬 A ] → MorLst 𝒫 𝒬 (Γ ⊹ A)
+
+  ⇓MorLst : {𝒫 𝒬 : PresheafFamily} {Γ : C.ctx} → MorLst 𝒫 𝒬 Γ →
+    tms (plurify 𝒫 Γ) (plurify 𝒬 Γ)
+  ⇓MorLst !! = !
+  ⇓MorLst (αs ⊗ α) = ⇓MorLst αs ×tm α-}
+
+  

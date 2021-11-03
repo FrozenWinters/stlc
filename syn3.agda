@@ -3,10 +3,17 @@
 module syn3 where
 
 open import ren2
+open import psh
+open import cartesian3
 
 open import Cubical.Data.Unit as ⊤ renaming (Unit to ⊤)
 open import Cubical.Data.Sigma
 open import Cubical.Categories.Category
+open import Cubical.Categories.Functor
+open import Cubical.Categories.Instances.Sets
+
+-- Here, we give a construction of the syntactic category. This defines the terms
+-- that we will be normalising, as well as the rules by which we will do so.
 
 data Tm : Ctx → Ty → Set
 Tms = IL Tm
@@ -16,6 +23,8 @@ _∘Tms_ : {Γ Δ Σ : Ctx} → Tms Δ Σ → Tms Γ Δ → Tms Γ Σ
 idTms : (Γ : Ctx) → Tms Γ Γ
 W₁Tms : {Γ Δ : Ctx} (A : Ty) → Tms Γ Δ → Tms (Γ ⊹ A) Δ
 W₂Tms : {Γ Δ : Ctx} (A : Ty) → Tms Γ Δ → Tms (Γ ⊹ A) (Δ ⊹ A)
+
+-- We use explicit substitutions and give rules for how to substitute into any term constructor.
 
 infixl 30 _[_]
 data Tm where
@@ -63,7 +72,7 @@ W₂Tms A σ = W₁Tms A σ ⊕ V Zv
 ∘TmsAssoc ! τ μ = refl
 ∘TmsAssoc (σ ⊕ t) τ μ i = ∘TmsAssoc σ τ μ i ⊕ [][] t τ μ i
 
--- Lemmas on how varify acts
+-- Lemmas on how varify and wekening acts
 
 Vlem0 : {Γ Δ : Ctx} {A : Ty} (v : Var Δ A) (σ : Ren Γ Δ) →
   V (v [ σ ]R) ≡ (V v) [ varify σ ]
@@ -136,6 +145,8 @@ private
     ≡⟨ ap (_⊕ t) (∘TmsIdL σ) ⟩
   σ ⊕ t
     ∎
+
+-- Now we get to some big hitting lemmas proved by induction over Tm
 
 {-# TERMINATING #-}
 [id] : {Γ : Ctx} {A : Ty} (t : Tm Γ A) → t [ idTms Γ ] ≡ t
@@ -348,26 +359,11 @@ Wlem0 {A = A} (trunc t₁ t₂ p q i j) σ s =
     (λ k → Wlem0 (q k) σ s)
     (λ k → Wlem0 t₁ σ s)
     (λ k → Wlem0 t₂ σ s) i j
-{-
-_⇒Tms_ : (A : Ty) (Γ : Ctx) → Ctx
-A ⇒Tms ∅ = ∅
-A ⇒Tms (Γ ⊹ B) = (A ⇒Tms Γ) ⊹ (A ⇒ B)
-
-LamTms : {Γ Δ : Ctx} {A : Ty} → Tms (Γ ⊹ A) Δ → Tms Γ (A ⇒Tms Δ)
-LamTms ! = !
-LamTms (σ ⊕ t) = LamTms σ ⊕ Lam t
-
-eval : {A : Ty} {Γ : Ctx} → Tms ((A ⇒Tms Γ) ⊹ A) Γ
-eval {Γ = ∅} = !
-eval {A} {Γ ⊹ B} = {!!} ⊕ (App (V (Sv Zv)) (V Zv))
---W₁Tms A (W₁Tms (A ⇒ B) {!!})
-
-LamNat₂ : {Γ Δ : Ctx} {A B : Ty} (t : Tm Δ B) (σ : Tms (Γ ⊹ A) Δ) →
-  Lam (t [ σ ]) ≡ Lam {!!} [ LamTms σ ]
--}
 
 module _ where
   open Contextual
+
+  -- FInally we define the contextual cateogy σιν and its ambient category SYN
 
   σιν : Contextual lzero lzero
   ty σιν = Ty
@@ -381,3 +377,95 @@ module _ where
 
   SYN : Precategory lzero lzero
   SYN = ambCat σιν
+
+  instance
+    isCatSyn : isCategory SYN
+    isCatSyn .isSetHom = isSetTms σιν
+
+-- We define a functor from REN to SYN (we get some things being less definitional
+-- if we define a contextual functor instead).
+
+module _ where
+  open Functor
+
+  Varify : Functor REN SYN
+  F-ob Varify Γ = Γ
+  F-hom Varify = varify
+  F-id Varify = refl
+  F-seq Varify τ σ = Vlem1 σ τ
+
+-- We also define TM as a presheaf on Ren
+
+open import Cubical.Categories.NaturalTransformation hiding (_⟦_⟧)
+
+module _ where
+  open Precategory
+  open Contextual (𝒫𝒮𝒽 REN)
+  open Functor
+  open NatTrans
+  open PShFam
+  
+  𝒯ℳ : (A : Ty) → ob (PSh SYN)
+  F-ob (𝒯ℳ A) Γ = Tm Γ A , trunc
+  F-hom (𝒯ℳ A) σ t = t [ σ ]
+  F-id (𝒯ℳ A) i t = [id] t i
+  F-seq (𝒯ℳ A) σ τ i t = [][] t σ τ (~ i)
+
+  TM : (A : Ty) → ob (PSh REN)
+  TM A = funcComp (𝒯ℳ A) (Varify ^opF)
+
+  TMS = plurify TM
+
+  {-TM : (A : Ty) → ob (PSh REN)
+  F-ob (TM A) Γ = Tm Γ A , trunc
+  F-hom (TM A) σ t = t [ varify σ ]
+  F-id (TM A) {Γ} i t = [id] t i
+  F-seq (TM A) σ τ i t =
+    (t [ varify (σ ∘Ren τ) ]
+      ≡⟨ ap (t [_]) (Vlem1 σ τ) ⟩
+    t [ varify σ ∘Tms varify τ ]
+      ≡⟨ [][] t (varify σ) (varify τ) ⁻¹ ⟩
+    t [ varify σ ] [ varify τ ]
+      ∎) i-}
+
+  ⇓TMS : {Γ Δ : Ctx} → fst (F-ob (⇓PSh (TMS Δ)) Γ) → Tms Γ Δ
+  ⇓TMS {Γ} {∅} MS = !
+  ⇓TMS {Γ} {Δ ⊹ A} (MS , M) = ⇓TMS MS ⊕ M
+
+  ⇓TMSHom : {Γ Δ Σ : Ctx} (MS : fst (F-ob (⇓PSh (TMS Γ)) Δ)) (σ : Ren Σ Δ) →
+    ⇓TMS {Σ} {Γ} (F-hom (⇓PSh (TMS Γ)) σ MS) ≡ ⇓TMS MS ∘Tms varify σ
+  ⇓TMSHom {∅} MS σ = refl
+  ⇓TMSHom {Γ ⊹ A} (MS , M) σ i = ⇓TMSHom MS σ i ⊕ M [ varify σ ]
+
+  TMよ : {Γ : Ctx} {A : Ty} → Tm Γ A → tm (TMS Γ) (TM A)
+  N-ob (TMよ {Γ} t) Δ MS = t [ ⇓TMS MS ]
+  N-hom (TMよ {Γ} t) {Δ} {Σ} σ i MS =
+    (t [ ⇓TMS (F-hom (⇓PSh (TMS Γ)) σ MS) ]
+      ≡⟨ ap (t [_]) (⇓TMSHom MS σ) ⟩
+    t [ ⇓TMS MS ∘Tms varify σ ]
+      ≡⟨ [][] t (⇓TMS MS) (varify σ) ⁻¹ ⟩
+    t [ ⇓TMS MS ] [ varify σ ]
+      ∎) i
+
+  TMSよ : {Γ Δ : Ctx} → Tms Γ Δ → tms (TMS Γ) (TMS Δ)
+  TMSよ {Γ} {Δ} = mapIL₁ TMよ
+
+  ⇓TMSよOb : {Γ Δ Σ : Ctx} (σ : Tms Γ Δ) (MS : fst (F-ob (⇓PSh (TMS Γ)) Σ)) →
+    ⇓TMS {Σ} {Δ} (N-ob (⇓PShMor (TMSよ σ)) Σ MS) ≡ σ ∘Tms (⇓TMS {Σ} {Γ} MS)
+  ⇓TMSよOb ! MS = refl
+  ⇓TMSよOb (σ ⊕ t) MS i = ⇓TMSよOb σ MS i ⊕ t [ ⇓TMS MS ]
+
+  private
+    TMよ⟦⟧lem : {Γ Δ : Ctx} {A : Ty} (t : Tm Δ A) (σ : Tms Γ Δ) →
+      N-ob (TMよ (t [ σ ])) ≡ N-ob (TMよ t ⟦ TMSよ σ ⟧)
+    TMよ⟦⟧lem t σ i Γ MS =
+      (t [ σ ] [ ⇓TMS MS ]
+          ≡⟨ [][] t σ (⇓TMS MS) ⟩
+        t [ σ ∘Tms ⇓TMS MS ]
+          ≡⟨ ap (t [_]) (⇓TMSよOb σ MS ⁻¹) ⟩
+        N-ob (TMよ t ⟦ TMSよ σ ⟧) Γ MS
+          ∎) i
+
+  TMよ⟦⟧ : {Γ Δ : Ctx} {A : Ty} (t : Tm Δ A) (σ : Tms Γ Δ) →
+    TMよ (t [ σ ]) ≡ TMよ t ⟦ TMSよ σ ⟧
+  TMよ⟦⟧ t σ = makeNatTransPath (TMよ⟦⟧lem t σ)

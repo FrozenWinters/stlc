@@ -2,100 +2,18 @@
 
 module contextual where
 
-open import Agda.Primitive using (Level; lzero; lsuc; _⊔_) public
-open import Cubical.Core.Everything public
-open import Cubical.Foundations.Everything renaming (cong to ap) public
-open import Cubical.Data.Sigma
-open import Cubical.Data.Unit as ⊤ renaming (Unit to ⊤)
+open import lists public
+
 open import Cubical.Categories.Category
 open import Cubical.Categories.Functor
+open import Cubical.Data.Nat renaming (zero to Z; suc to S)
 
 private
   variable
-    ℓ ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
+    ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
 
--- First we define the basic data structures used to build contextual categories
-
--- Reversed List
-infixl 20 _⊹_
-data RL (ty : Type ℓ) : Type ℓ where
-  ∅ : RL ty
-  _⊹_ : RL ty → ty → RL ty
-
-mapRL : {ty₁ : Type ℓ₁} {ty₂ : Type ℓ₂} (f : ty₁ → ty₂) (Γ : RL ty₁) → RL ty₂
-mapRL f ∅ = ∅
-mapRL f (Γ ⊹ A) = mapRL f Γ ⊹ f A
-
--- Indexed List
-infixl 20 _⊕_
-data IL {ty : Type ℓ₁} (tm : RL ty → ty → Type ℓ₂)
-     : (Γ Δ : RL ty) → Type (ℓ₁ ⊔ ℓ₂) where
-  ! : {Γ : RL ty} → IL tm Γ ∅
-  _⊕_ : {Γ Δ : RL ty} {A : ty} → IL tm Γ Δ → tm Γ A → IL tm Γ (Δ ⊹ A)
-
-mapIL : {ty : Type ℓ₁} {Γ₁ Γ₂ Δ : RL ty} {tm₁ : RL ty → ty → Type ℓ₂} {tm₂ : RL ty → ty → Type ℓ₃}
-  (f : {A : ty} → tm₁ Γ₁ A → tm₂ Γ₂ A) (σ : IL tm₁ Γ₁ Δ) → IL tm₂ Γ₂ Δ
-mapIL f ! = !
-mapIL f (σ ⊕ t) = mapIL f σ ⊕ f t
-
--- This version is sometimes harder to use since the target context is defined recursively
-mapIL₁ : {ty₁ : Type ℓ₁} {ty₂ : Type ℓ₂} {tm₁ : RL ty₁ → ty₁ → Type ℓ₃}
-  {tm₂ : RL ty₂ → ty₂ → Type ℓ₄} {Γ₁ Δ : RL ty₁} {Γ₂ : RL ty₂} {P : ty₁ → ty₂}
-  (f : {A : ty₁} → tm₁ Γ₁ A → tm₂ Γ₂ (P A)) → IL tm₁ Γ₁ Δ → IL tm₂ Γ₂ (mapRL P Δ)
-mapIL₁ f ! = !
-mapIL₁ f (σ ⊕ t) = mapIL₁ f σ ⊕ f t
-
--- We prove that if tm is a set, then IL tm is a set
-
-module ILPath {ty : Type ℓ₁} (tm : RL ty → ty → Type ℓ₂)
-       (isSetTm : {Γ : RL ty} {A : ty} → isSet (tm Γ A)) where
-
-  ctx = RL ty
-  tms = IL tm
-
-  isPropLift : ∀ {ℓ₁ ℓ₂} {A : Set ℓ₁} → isProp A → isProp (Lift {ℓ₁} {ℓ₂} A)
-  isPropLift p (lift x) (lift y) = ap lift (p x y)
-
-  Code : {Γ Δ : ctx} → tms Γ Δ → tms Γ Δ → Type ℓ₂
-  Code ! ! = Lift ⊤
-  Code (σ ⊕ t) (τ ⊕ s) = (t ≡ s) × Code σ τ
-
-  reflCode : {Γ Δ : ctx} (σ : tms Γ Δ) → Code σ σ
-  reflCode ! = lift tt
-  reflCode (σ ⊕ t) = refl , reflCode σ
-
-  encode : {Γ Δ : ctx} (σ τ : tms Γ Δ) → σ ≡ τ → Code σ τ
-  encode σ τ = J (λ μ _ → Code σ μ) (reflCode σ)
-
-  encodeRefl : {Γ Δ : ctx} (σ : tms Γ Δ) → encode σ σ refl ≡ reflCode σ
-  encodeRefl σ = JRefl (λ τ _ → Code σ τ) (reflCode σ)
-
-  decode : {Γ Δ : ctx} (σ τ : tms Γ Δ) → Code σ τ → σ ≡ τ
-  decode ! ! x = refl
-  decode (σ ⊕ t) (τ ⊕ s) (p , q) i = decode σ τ q i ⊕ p i
-
-  decodeRefl : {Γ Δ : ctx} (σ : tms Γ Δ) → decode σ σ (reflCode σ) ≡ refl
-  decodeRefl ! = refl
-  decodeRefl (σ ⊕ t) = ap (ap (_⊕ t)) (decodeRefl σ)
-
-  decodeEncode : {Γ Δ : ctx} (σ τ : tms Γ Δ) (p : σ ≡ τ) → decode σ τ (encode σ τ p) ≡ p
-  decodeEncode σ τ =
-    J (λ μ q → decode σ μ (encode σ μ q) ≡ q)
-      (ap (decode σ σ) (encodeRefl σ) ∙ decodeRefl σ)
-
-  isPropCode : {Γ Δ : ctx} (σ τ : tms Γ Δ) → isProp (Code σ τ)
-  isPropCode ! ! = isPropLift isPropUnit
-  isPropCode (σ ⊕ t) (τ ⊕ s) = isPropΣ (isSetTm t s) (λ _ → isPropCode σ τ)
-
-  isSetTms : {Γ Δ : ctx} → isSet (tms Γ Δ)
-  isSetTms σ τ =
-    isOfHLevelRetract 1
-      (encode σ τ)
-      (decode σ τ)
-      (decodeEncode σ τ)
-      (isPropCode σ τ)
-
--- Now onto the fundemental definitions
+-- This new definition of a contextual category arose as a way to de-boilerplate the code;
+-- it is the most natural variation of the definition to use in an implementation.
 
 record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) where
   field
@@ -138,6 +56,8 @@ record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) wher
 
   isSetTms = P.isSetTms
 
+  -- Every contextual category has an ambient category of contexts and terms
+
   open Precategory
 
   ambCat : Precategory ℓ₁ (ℓ₁ ⊔ ℓ₂)
@@ -148,6 +68,151 @@ record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) wher
   ⋆IdL ambCat = 𝒾𝒹R
   ⋆IdR ambCat = 𝒾𝒹L
   ⋆Assoc ambCat μ τ σ = ⊚Assoc σ τ μ ⁻¹
+
+  instance
+    isCatAmbCat : isCategory ambCat
+    isSetHom isCatAmbCat = isSetTms
+
+  -- The identity function includes with it a notion of internal variables
+
+  data IntVar : ctx → ty → Type ℓ₁ where
+    𝑧V : {Γ : ctx} {A : ty} → IntVar (Γ ⊹ A) A
+    𝑠V : {Γ : ctx} {A B : ty} → IntVar Γ A → IntVar (Γ ⊹ B) A
+
+  {-dropVar : {Γ : ctx} {A : ty} → IntVar Γ A → ctx
+  dropVar {Γ ⊹ A} 𝑧V = Γ
+  dropVar (𝑠V v) = dropVar v-}
+
+  dropVar : {Γ : ctx} {A : ty} → IntVar Γ A → ctx
+  dropVar {Γ} 𝑧V = Γ
+  dropVar {Γ ⊹ B} (𝑠V v) = Γ
+
+  --dropTm : {Γ Δ : ctx} {A : ty} → tms Γ (Δ ⊹ A) → 
+
+  {-dropVar : (n : ℕ) {Γ : ctx} {A : ty} → IntVar Γ A → ctx
+  {-dropVar n {Γ} 𝑧V = Γ
+  dropVar Z {Γ} (𝑠V v) = Γ
+  dropVar (S n) (𝑠V v) = dropVar n v-}
+  dropVar Z {Γ} v = Γ
+  dropVar (S n) {Γ} 𝑧V = Γ
+  dropVar (S n) (𝑠V v) = dropVar n v-}
+
+  {-dropVarπ : (n : ℕ) {Γ : ctx} {A : ty} → IntVar Γ A → ctx
+  dropVarπ n {Γ ⊹ A} 𝑧V = Γ
+  dropVarπ Z {Γ ⊹ B} (𝑠V v) = Γ
+  dropVarπ (S n) (𝑠V v) = dropVarπ n v
+  {-dropVarπ Z {Γ ⊹ A} 𝑧V = Γ
+  dropVarπ Z {Γ ⊹ B} (𝑠V v) = Γ
+  dropVarπ (S n) {Γ ⊹ A} 𝑧V = Γ
+  dropVarπ (S n) (𝑠V v) = dropVarπ n v-}
+
+  dropVar𝑧 : (n : ℕ) {Γ : ctx} {A : ty} → IntVar Γ A → ty
+  dropVar𝑧 n {Γ ⊹ A} 𝑧V = A
+  dropVar𝑧 Z {Γ ⊹ B} (𝑠V v) = B
+  dropVar𝑧 (S n) (𝑠V v) = dropVar𝑧 n v
+  {-dropVar𝑧 Z {Γ} v = ?
+  dropVar𝑧 (S n) {Γ ⊹ A} 𝑧V = ?
+  dropVar𝑧 (S n) (𝑠V v) = dropVar𝑧 n v-}
+
+  dropVar : (n : ℕ) {Γ : ctx} {A : ty} → IntVar Γ A → ctx
+  dropVar n v = dropVarπ n v ⊹ dropVar𝑧 n v-}
+
+  {-drop𝒾𝒹 : (n : ℕ) {Γ : ctx} {A : ty} (w : IntVar Γ A) (v : IntVar (dropVar n w) A) →
+    tms Γ (dropVar n w)
+  drop𝒾𝒹 Z {Γ} v w = 𝒾𝒹 Γ
+  drop𝒾𝒹 (S n) 𝑧V w = {!!}
+  drop𝒾𝒹 (S n) (𝑠V v) w = {!!}-}
+  {-drop𝒾𝒹 n {Γ} 𝑧V w = 𝒾𝒹 Γ
+  drop𝒾𝒹 Z {Γ} (𝑠V v) w = {!!}
+  drop𝒾𝒹 (S n) (𝑠V v) w = {!drop𝒾𝒹 n (𝑠V v) ? !}-}
+  {-drop𝒾𝒹 Z {Γ} w v = 𝒾𝒹 Γ
+  drop𝒾𝒹 (S n) {Γ} 𝑧V v = {!𝒾𝒹 Γ!}
+  drop𝒾𝒹 (S n) (𝑠V w) v = {!!}-}
+
+  {-drop𝒾𝒹 : (Γ : ctx) {A : ty} (v : IntVar Γ A) → tms Γ (dropVar v ⊹ A)
+  drop𝒾𝒹 v = {!!}-}
+
+  {-dropπ : (n : ℕ) → ctx → ty → ctx
+  dropπ Z Γ A = Γ
+  dropπ (S n) ∅ A = ∅
+  dropπ (S n) (Γ ⊹ B) A = dropπ n Γ B
+
+  drop𝑧 : (n : ℕ) → ctx → ty → ty
+  drop𝑧 Z Γ A = A
+  drop𝑧 (S n) ∅ A = A
+  drop𝑧 (S n) (Γ ⊹ B) A = drop𝑧 n Γ B
+
+  -- Will stop dropping at a size one context
+  -- Done in two parts so it's judgmentally non-empty
+
+  drop : (n : ℕ) → ctx → ty → ctx
+  drop n Γ A = dropπ n Γ A ⊹ drop𝑧 n Γ A
+
+  typeAt : (n : ℕ) → ctx → ty → ty
+  typeAt n Γ A = drop𝑧 n Γ A
+
+  dropTm : (n : ℕ) {Γ Δ : ctx} {A : ty} → tms Γ (Δ ⊹ A) → tms Γ (drop n Δ A)
+  dropTm Z σ = σ
+  dropTm (S n) (! ⊕ t) = ! ⊕ t
+  dropTm (S n) (σ ⊕ s ⊕ t) = dropTm n (σ ⊕ s)
+
+  dropCtx : {Γ : ctx} {A : ty} → IntVar Γ A → ctx
+  dropCtx {Γ} 𝑧V = Γ
+  dropCtx (𝑠V v) = dropCtx v
+
+  dropVar : {Γ : ctx} {A : ty} (v : IntVar Γ A) → tms Γ (dropCtx v)
+  dropVar {Γ ⊹ A} 𝑧V = 𝒾𝒹 (Γ ⊹ A)
+  dropVar (𝑠V v) = {!!}-}
+
+  --drop𝒾𝒹 : (n : ℕ) (Γ : Ctx) (A : Ty) → tms (Γ ⊹ A) 
+
+  {-drop𝒾𝒹 : (n : ℕ) (Γ : ctx) (A : ty) → tms (Γ ⊹ A) (drop n Γ A)
+  drop𝒾𝒹 Z Γ A = 𝒾𝒹 (Γ ⊹ A)
+  drop𝒾𝒹 (S n) ∅ A = 𝒾𝒹 (∅ ⊹ A)
+  drop𝒾𝒹 (S n) (Γ ⊹ B) A = {!πIL (drop𝒾𝒹 n (Γ ⊹ B) A)!}-}
+
+  π : {Γ : ctx} {A : ty} → tms (Γ ⊹ A) Γ
+  π {Γ} {A} = πIL (𝒾𝒹 (Γ ⊹ A))
+
+  𝑧 : {Γ : ctx} {A : ty} → tm (Γ ⊹ A) A
+  𝑧 {Γ} {A} = 𝑧IL (𝒾𝒹 (Γ ⊹ A))
+
+  makeVar : {Γ : ctx} {A : ty} → IntVar Γ A → tm Γ A
+  makeVar 𝑧V = 𝑧
+  makeVar (𝑠V v) = makeVar v ⟦ π ⟧
+
+  IntRen = IL IntVar
+
+  W₁IntRen : {Γ Δ : ctx} (A : ty) → IntRen Γ Δ → IntRen (Γ ⊹ A) Δ
+  W₁IntRen A σ = mapIL 𝑠V σ
+
+  W₂IntRen : {Γ Δ : ctx} (A : ty) → IntRen Γ Δ → IntRen (Γ ⊹ A) (Δ ⊹ A)
+  W₂IntRen A σ = W₁IntRen A σ ⊕ 𝑧V
+
+  --IntIdRen : 
+
+  𝒾𝒹η : {Γ : ctx} {A : ty} → π ⊕ 𝑧 ≡ 𝒾𝒹 (Γ ⊹ A) 
+  𝒾𝒹η {Γ} {A} = π𝑧ηIL (𝒾𝒹 (Γ ⊹ A))
+
+  π𝑧η : {Γ Δ : ctx} {A : ty} (σ : tms Γ (Δ ⊹ A)) →
+    (π ⊚ σ) ⊕ (𝑧 ⟦ σ ⟧) ≡ σ
+  π𝑧η {Γ} {Δ} {A} σ =
+    π ⊚ σ ⊕ 𝑧 ⟦ σ ⟧
+      ≡⟨ ap (_⊚ σ) 𝒾𝒹η ⟩
+    𝒾𝒹 (Δ ⊹ A) ⊚ σ
+      ≡⟨ 𝒾𝒹L σ ⟩
+    σ
+      ∎
+
+  πβ : {Γ Δ : ctx} {A : ty} (σ : tms Γ Δ) (t : tm Γ A) →
+    π ⊚ (σ ⊕ t) ≡ σ
+  πβ σ t = ap πIL (π𝑧η (σ ⊕ t))
+
+  𝑧β : {Γ Δ : ctx} {A : ty} (σ : tms Γ Δ) (t : tm Γ A) →
+    𝑧 ⟦ σ ⊕ t ⟧ ≡ t
+  𝑧β σ t = ap 𝑧IL (π𝑧η (σ ⊕ t))
+
+-- The idea is that a contextual functor preserves the contextual structure
 
 record ContextualFunctor (𝒞 : Contextual ℓ₁ ℓ₂) (𝒟 : Contextual ℓ₃ ℓ₄)
        : Type (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃ ⊔ ℓ₄) where
@@ -180,6 +245,8 @@ record ContextualFunctor (𝒞 : Contextual ℓ₁ ℓ₂) (𝒟 : Contextual �
   CF-comp (σ ⊕ t) τ i = CF-comp σ τ i ⊕ CF-sub t τ i
 
   open Functor
+
+  -- A contextual functor induces a functor between the ambient categories
 
   ambFun : Functor (ambCat 𝒞) (ambCat 𝒟)
   F-ob ambFun = CF-ctx

@@ -9,6 +9,9 @@ open import ren2
 
 open import Agda.Builtin.Char
 open import Cubical.Categories.Category
+open import Cubical.Categories.Functor
+
+-- We construct a canonical contextual functor from σιν to any CCC 𝒞
 
 module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 : CCC 𝒞 ⦄
                   (base : (c : Char) → Contextual.ty 𝒞) where
@@ -59,7 +62,7 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
     interpRen (W₁Ren A (idRen Γ)) ⊕ 𝑧
       ≡⟨ ap (_⊕ 𝑧) πlem ⟩
     π ⊕ 𝑧
-      ≡⟨ 𝒾𝒹β ⟩
+      ≡⟨ 𝒾𝒹η ⟩
     𝒾𝒹 (interpCtx (Γ ⊹ A))
       ∎
 
@@ -67,8 +70,7 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
 
   {-# TERMINATING #-}
   interpTms : {Γ Δ : Ctx} (σ : Tms Γ Δ) → tms  (interpCtx Γ)  (interpCtx Δ)
-  interpTms ! = !
-  interpTms (σ ⊕ t) = interpTms σ ⊕ interpTm t
+  interpTms = mapIL₁ interpTm
 
   interpVarify : {Γ Δ : Ctx} (σ : Ren Γ Δ) →
     interpTms (varify σ) ≡ interpRen σ
@@ -179,3 +181,14 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
 
   interp∘Tms ! τ = !η (! ⊚ interpTms τ)
   interp∘Tms (σ ⊕ t) τ = ap (_⊕ interpTm (t [ τ ])) (interp∘Tms σ τ)
+
+  open ContextualFunctor
+
+  elim : ContextualFunctor σιν 𝒞
+  CF-ty elim = interpTy
+  CF-tm elim = interpTm
+  CF-id elim = interpId
+  CF-sub elim t σ = refl
+
+  elimAmb : Functor SYN ambCat
+  elimAmb = ambFun elim

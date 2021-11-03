@@ -7,6 +7,8 @@ open import contextual public
 open import Agda.Builtin.Char public
 open import Cubical.Categories.Category
 
+-- These defenitions of Types and Contexts will be used throughout the project
+
 infixr 20 _⇒_
 data Ty : Set where
   Base : Char → Ty
@@ -14,11 +16,17 @@ data Ty : Set where
 
 Ctx = RL Ty
 
+-- Intrinsically well-typed de Bruijn Variables
+
 data Var : Ctx → Ty → Set where
   Zv : {Γ : Ctx} {A : Ty} → Var (Γ ⊹ A) A
   Sv : {Γ : Ctx} {A B : Ty} → Var Γ A → Var (Γ ⊹ B) A
 
+-- A Renaming is a list of variables
+
 Ren = IL Var
+
+-- Now we exhibit some structure of Renamings
 
 W₁Ren : {Γ Δ : Ctx} (A : Ty) → Ren Γ Δ → Ren (Γ ⊹ A) Δ
 W₁Ren A σ = mapIL Sv σ
@@ -101,17 +109,13 @@ Wlem5Ren (σ ⊕ v) τ i = Wlem5Ren σ τ i ⊕ Wlem2Ren v τ i
   Sv v
     ∎
 
-{-
-∘RenIdR : {Γ Δ : Ctx} (σ : Ren Γ Δ) → σ ∘Ren idRen Γ ≡ σ
-∘RenIdR ! = refl
-∘RenIdR (σ ⊕ v) i = ∘RenIdR σ i ⊕ [id]Ren v i
--}
-
 isSetVar : {Γ : Ctx} {A : Ty} → isSet (Var Γ A)
 isSetVar = {!!}
 
 module _ where
   open Contextual
+
+  -- We define the contextual category ρεν and its ambient category REN
 
   ρεν : Contextual lzero lzero
   ty ρεν = Ty
