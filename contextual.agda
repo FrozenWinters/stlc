@@ -58,7 +58,7 @@ record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) wher
 
   -- Every contextual category has an ambient category of contexts and terms
 
-  open Precategory
+  open Precategory hiding (_∘_)
 
   ambCat : Precategory ℓ₁ (ℓ₁ ⊔ ℓ₂)
   ob ambCat = ctx
@@ -73,123 +73,18 @@ record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) wher
     isCatAmbCat : isCategory ambCat
     isSetHom isCatAmbCat = isSetTms
 
-  -- The identity function includes with it a notion of internal variables
+  -- ∅ is automatically the terminal object with unique morphism !
 
-  data IntVar : ctx → ty → Type ℓ₁ where
-    𝑧V : {Γ : ctx} {A : ty} → IntVar (Γ ⊹ A) A
-    𝑠V : {Γ : ctx} {A B : ty} → IntVar Γ A → IntVar (Γ ⊹ B) A
+  !η : {Γ : ctx} (σ : tms Γ ∅) → ! ≡ σ
+  !η ! = refl
 
-  {-dropVar : {Γ : ctx} {A : ty} → IntVar Γ A → ctx
-  dropVar {Γ ⊹ A} 𝑧V = Γ
-  dropVar (𝑠V v) = dropVar v-}
-
-  dropVar : {Γ : ctx} {A : ty} → IntVar Γ A → ctx
-  dropVar {Γ} 𝑧V = Γ
-  dropVar {Γ ⊹ B} (𝑠V v) = Γ
-
-  --dropTm : {Γ Δ : ctx} {A : ty} → tms Γ (Δ ⊹ A) → 
-
-  {-dropVar : (n : ℕ) {Γ : ctx} {A : ty} → IntVar Γ A → ctx
-  {-dropVar n {Γ} 𝑧V = Γ
-  dropVar Z {Γ} (𝑠V v) = Γ
-  dropVar (S n) (𝑠V v) = dropVar n v-}
-  dropVar Z {Γ} v = Γ
-  dropVar (S n) {Γ} 𝑧V = Γ
-  dropVar (S n) (𝑠V v) = dropVar n v-}
-
-  {-dropVarπ : (n : ℕ) {Γ : ctx} {A : ty} → IntVar Γ A → ctx
-  dropVarπ n {Γ ⊹ A} 𝑧V = Γ
-  dropVarπ Z {Γ ⊹ B} (𝑠V v) = Γ
-  dropVarπ (S n) (𝑠V v) = dropVarπ n v
-  {-dropVarπ Z {Γ ⊹ A} 𝑧V = Γ
-  dropVarπ Z {Γ ⊹ B} (𝑠V v) = Γ
-  dropVarπ (S n) {Γ ⊹ A} 𝑧V = Γ
-  dropVarπ (S n) (𝑠V v) = dropVarπ n v-}
-
-  dropVar𝑧 : (n : ℕ) {Γ : ctx} {A : ty} → IntVar Γ A → ty
-  dropVar𝑧 n {Γ ⊹ A} 𝑧V = A
-  dropVar𝑧 Z {Γ ⊹ B} (𝑠V v) = B
-  dropVar𝑧 (S n) (𝑠V v) = dropVar𝑧 n v
-  {-dropVar𝑧 Z {Γ} v = ?
-  dropVar𝑧 (S n) {Γ ⊹ A} 𝑧V = ?
-  dropVar𝑧 (S n) (𝑠V v) = dropVar𝑧 n v-}
-
-  dropVar : (n : ℕ) {Γ : ctx} {A : ty} → IntVar Γ A → ctx
-  dropVar n v = dropVarπ n v ⊹ dropVar𝑧 n v-}
-
-  {-drop𝒾𝒹 : (n : ℕ) {Γ : ctx} {A : ty} (w : IntVar Γ A) (v : IntVar (dropVar n w) A) →
-    tms Γ (dropVar n w)
-  drop𝒾𝒹 Z {Γ} v w = 𝒾𝒹 Γ
-  drop𝒾𝒹 (S n) 𝑧V w = {!!}
-  drop𝒾𝒹 (S n) (𝑠V v) w = {!!}-}
-  {-drop𝒾𝒹 n {Γ} 𝑧V w = 𝒾𝒹 Γ
-  drop𝒾𝒹 Z {Γ} (𝑠V v) w = {!!}
-  drop𝒾𝒹 (S n) (𝑠V v) w = {!drop𝒾𝒹 n (𝑠V v) ? !}-}
-  {-drop𝒾𝒹 Z {Γ} w v = 𝒾𝒹 Γ
-  drop𝒾𝒹 (S n) {Γ} 𝑧V v = {!𝒾𝒹 Γ!}
-  drop𝒾𝒹 (S n) (𝑠V w) v = {!!}-}
-
-  {-drop𝒾𝒹 : (Γ : ctx) {A : ty} (v : IntVar Γ A) → tms Γ (dropVar v ⊹ A)
-  drop𝒾𝒹 v = {!!}-}
-
-  {-dropπ : (n : ℕ) → ctx → ty → ctx
-  dropπ Z Γ A = Γ
-  dropπ (S n) ∅ A = ∅
-  dropπ (S n) (Γ ⊹ B) A = dropπ n Γ B
-
-  drop𝑧 : (n : ℕ) → ctx → ty → ty
-  drop𝑧 Z Γ A = A
-  drop𝑧 (S n) ∅ A = A
-  drop𝑧 (S n) (Γ ⊹ B) A = drop𝑧 n Γ B
-
-  -- Will stop dropping at a size one context
-  -- Done in two parts so it's judgmentally non-empty
-
-  drop : (n : ℕ) → ctx → ty → ctx
-  drop n Γ A = dropπ n Γ A ⊹ drop𝑧 n Γ A
-
-  typeAt : (n : ℕ) → ctx → ty → ty
-  typeAt n Γ A = drop𝑧 n Γ A
-
-  dropTm : (n : ℕ) {Γ Δ : ctx} {A : ty} → tms Γ (Δ ⊹ A) → tms Γ (drop n Δ A)
-  dropTm Z σ = σ
-  dropTm (S n) (! ⊕ t) = ! ⊕ t
-  dropTm (S n) (σ ⊕ s ⊕ t) = dropTm n (σ ⊕ s)
-
-  dropCtx : {Γ : ctx} {A : ty} → IntVar Γ A → ctx
-  dropCtx {Γ} 𝑧V = Γ
-  dropCtx (𝑠V v) = dropCtx v
-
-  dropVar : {Γ : ctx} {A : ty} (v : IntVar Γ A) → tms Γ (dropCtx v)
-  dropVar {Γ ⊹ A} 𝑧V = 𝒾𝒹 (Γ ⊹ A)
-  dropVar (𝑠V v) = {!!}-}
-
-  --drop𝒾𝒹 : (n : ℕ) (Γ : Ctx) (A : Ty) → tms (Γ ⊹ A) 
-
-  {-drop𝒾𝒹 : (n : ℕ) (Γ : ctx) (A : ty) → tms (Γ ⊹ A) (drop n Γ A)
-  drop𝒾𝒹 Z Γ A = 𝒾𝒹 (Γ ⊹ A)
-  drop𝒾𝒹 (S n) ∅ A = 𝒾𝒹 (∅ ⊹ A)
-  drop𝒾𝒹 (S n) (Γ ⊹ B) A = {!πIL (drop𝒾𝒹 n (Γ ⊹ B) A)!}-}
+  -- Contextual categories automatically have products
 
   π : {Γ : ctx} {A : ty} → tms (Γ ⊹ A) Γ
   π {Γ} {A} = πIL (𝒾𝒹 (Γ ⊹ A))
 
   𝑧 : {Γ : ctx} {A : ty} → tm (Γ ⊹ A) A
   𝑧 {Γ} {A} = 𝑧IL (𝒾𝒹 (Γ ⊹ A))
-
-  makeVar : {Γ : ctx} {A : ty} → IntVar Γ A → tm Γ A
-  makeVar 𝑧V = 𝑧
-  makeVar (𝑠V v) = makeVar v ⟦ π ⟧
-
-  IntRen = IL IntVar
-
-  W₁IntRen : {Γ Δ : ctx} (A : ty) → IntRen Γ Δ → IntRen (Γ ⊹ A) Δ
-  W₁IntRen A σ = mapIL 𝑠V σ
-
-  W₂IntRen : {Γ Δ : ctx} (A : ty) → IntRen Γ Δ → IntRen (Γ ⊹ A) (Δ ⊹ A)
-  W₂IntRen A σ = W₁IntRen A σ ⊕ 𝑧V
-
-  --IntIdRen : 
 
   𝒾𝒹η : {Γ : ctx} {A : ty} → π ⊕ 𝑧 ≡ 𝒾𝒹 (Γ ⊹ A) 
   𝒾𝒹η {Γ} {A} = π𝑧ηIL (𝒾𝒹 (Γ ⊹ A))
@@ -204,13 +99,128 @@ record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) wher
     σ
       ∎
 
-  πβ : {Γ Δ : ctx} {A : ty} (σ : tms Γ Δ) (t : tm Γ A) →
-    π ⊚ (σ ⊕ t) ≡ σ
-  πβ σ t = ap πIL (π𝑧η (σ ⊕ t))
+  πβ : {Γ Δ : ctx} {A : ty} (σ : tms Γ (Δ ⊹ A)) →
+    π ⊚ σ ≡ πIL σ
+  πβ σ = ap πIL (π𝑧η σ)
 
-  𝑧β : {Γ Δ : ctx} {A : ty} (σ : tms Γ Δ) (t : tm Γ A) →
-    𝑧 ⟦ σ ⊕ t ⟧ ≡ t
-  𝑧β σ t = ap 𝑧IL (π𝑧η (σ ⊕ t))
+  𝑧β : {Γ Δ : ctx} {A : ty} (σ : tms Γ (Δ ⊹ A)) →
+    𝑧 ⟦ σ ⟧ ≡ 𝑧IL σ
+  𝑧β σ = ap 𝑧IL (π𝑧η σ)
+
+  -- The identity function includes with it a notion of internal variables
+
+  data IntVar : ctx → ty → Type ℓ₁ where
+    𝑧V : {Γ : ctx} {A : ty} → IntVar (Γ ⊹ A) A
+    𝑠V : {Γ : ctx} {A B : ty} → IntVar Γ A → IntVar (Γ ⊹ B) A
+
+  derive : {Γ Δ : ctx} {A : ty} → tms Γ Δ → IntVar Δ A → tm Γ A
+  derive σ 𝑧V = 𝑧IL σ
+  derive σ (𝑠V v) = derive (πIL σ) v
+
+  makeVar : {Γ : ctx} {A : ty} → IntVar Γ A → tm Γ A
+  makeVar {Γ} = derive (𝒾𝒹 Γ)
+
+  IntRen = IL IntVar
+
+  deriveRen : {Γ Δ Σ : ctx} → tms Γ Δ → IntRen Δ Σ → tms Γ Σ
+  deriveRen σ = mapIL (derive σ)
+
+  makeRen : {Γ Δ : ctx} → IntRen Γ Δ → tms Γ Δ
+  makeRen {Γ} = deriveRen (𝒾𝒹 Γ)
+
+  deriveMap : {Γ Δ Σ : ctx} (f : {A : ty} → tm Γ A → tm Δ A) (σ : tms Γ Σ) {A : ty}
+    (v : IntVar Σ A) → derive (mapIL f σ) v ≡ f (derive σ v)
+  deriveMap f (σ ⊕ t) 𝑧V = refl
+  deriveMap f (σ ⊕ t) (𝑠V v) = deriveMap f σ v
+
+  derive⟦⟧ : {Γ Δ Σ : ctx} {A : ty} (v : IntVar Σ A) (σ : tms Δ Σ) (τ : tms Γ Δ) →
+    derive σ v ⟦ τ ⟧ ≡ derive (σ ⊚ τ) v
+  derive⟦⟧ 𝑧V σ τ =
+    𝑧IL σ ⟦ τ ⟧
+      ≡⟨ ap _⟦ τ ⟧ (𝑧β σ ⁻¹) ⟩
+    𝑧 ⟦ σ ⟧ ⟦ τ ⟧
+      ≡⟨ ⟦⟧⟦⟧ 𝑧 σ τ ⟩
+    𝑧 ⟦ σ ⊚ τ ⟧
+      ≡⟨ 𝑧β (σ ⊚ τ) ⟩
+    𝑧IL (σ ⊚ τ)
+      ∎
+  derive⟦⟧ (𝑠V v) σ τ =
+    derive (πIL σ) v ⟦ τ ⟧
+      ≡⟨ (λ i → derive (πβ σ (~ i)) v ⟦ τ ⟧) ⟩
+    derive (π ⊚ σ) v ⟦ τ ⟧
+      ≡⟨ ap _⟦ τ ⟧ (derive⟦⟧ v π σ ⁻¹) ⟩
+    derive π v ⟦ σ ⟧ ⟦ τ ⟧
+      ≡⟨ ⟦⟧⟦⟧ (derive π v) σ τ ⟩
+    derive π v ⟦ σ ⊚ τ ⟧
+      ≡⟨ derive⟦⟧ v π (σ ⊚ τ) ⟩
+    derive (π ⊚ (σ ⊚ τ)) v
+      ≡⟨ (λ i → derive (πβ (σ ⊚ τ) i) v) ⟩
+    derive (πIL (σ ⊚ τ)) v
+      ∎
+
+  varβ : {Γ Δ : ctx} {A : ty} (v : IntVar Δ A) (σ : tms Γ Δ) →
+    makeVar v ⟦ σ ⟧ ≡ derive σ v
+  varβ {Γ} {Δ} v σ =
+    derive (𝒾𝒹 Δ) v ⟦ σ ⟧
+      ≡⟨ derive⟦⟧ v (𝒾𝒹 Δ) σ ⟩
+    derive (𝒾𝒹 Δ ⊚ σ) v
+      ≡⟨ (λ i → derive (𝒾𝒹L σ i) v) ⟩
+    derive σ v
+      ∎
+
+  make𝑠V : {Γ : ctx} {A B : ty} (v : IntVar Γ A) →
+    makeVar (𝑠V {B = B} v) ≡ makeVar v ⟦ π ⟧
+  make𝑠V {Γ} {A} {B} v = varβ v π ⁻¹
+
+  private 
+    W₁IntRen : {Γ Δ : ctx} (A : ty) → IntRen Γ Δ → IntRen (Γ ⊹ A) Δ
+    W₁IntRen A σ = mapIL 𝑠V σ
+
+    W₂IntRen : {Γ Δ : ctx} (A : ty) → IntRen Γ Δ → IntRen (Γ ⊹ A) (Δ ⊹ A)
+    W₂IntRen A σ = W₁IntRen A σ ⊕ 𝑧V
+
+  IntIdRen : (Γ : ctx) → IntRen Γ Γ
+  IntIdRen ∅ = !
+  IntIdRen (Γ ⊹ A) = W₂IntRen A (IntIdRen Γ)
+
+  {-varβ : {Γ Δ : ctx} {A : ty} (v : IntVar Δ A) (σ : tms Γ Δ) →
+    makeVar v ⟦ σ ⟧ ≡ derive σ v
+  varβ 𝑧V σ = 𝑧β σ
+  varβ (𝑠V v) σ = {!varβ v (πIL σ)!}-}
+
+  {-makeW₁lem : (Δ : ctx) {Γ : ctx} {A : ty} →
+    makeVar (W₁Var Δ (𝑧V {Γ} {A})) ≡ W₁Tm Δ (makeVar 𝑧V)
+  makeW₁lem ∅ = refl
+  makeW₁lem (∅ ⊹ A) = {!!}
+  makeW₁lem (∅ ⊹ B ⊹ A) = {!!}
+  makeW₁lem (Δ ⊹ C ⊹ B ⊹ A) = {!!}
+
+  {-makeW₁ : (Δ : ctx) {Γ : ctx} {A : ty} (v : IntVar Γ A) →
+    makeVar (W₁Var Δ v) ≡ W₁Tm Δ (makeVar v)
+  makeW₁ ∅ {Γ ⊹ B} (𝑠V v) = {!!}
+  makeW₁ (Δ ⊹ C) {Γ ⊹ B} (𝑠V v) =
+    makeVar (𝑠V (W₁Var Δ (𝑠V v)))
+      ≡⟨ makeW₁ (∅ ⊹ C) (W₁Var Δ (𝑠V v)) ⟩
+    makeVar (W₁Var Δ (𝑠V v)) ⟦ π ⟧
+      ≡⟨ ap _⟦ π ⟧ (makeW₁ Δ (𝑠V v)) ⟩
+    W₁Tm Δ (makeVar (𝑠V v)) ⟦ π ⟧
+      ∎
+  makeW₁ Δ 𝑧V = {!!}
+
+  make𝑠V : {Γ : ctx} {A B : ty} (v : IntVar Γ A) →
+    makeVar (𝑠V {B = B} v) ≡ makeVar v ⟦ π ⟧
+  make𝑠V {Γ} {A} {B} 𝑧V = 𝑧β π ⁻¹
+  make𝑠V {Γ ⊹ C} {A} {B} (𝑠V v) =
+    makeVar (𝑠V (𝑠V v))
+      ≡⟨ makeW₁ (∅ ⊹ C ⊹ B) v ⟩
+    W₁Tm (∅ ⊹ C ⊹ B) (makeVar v)
+      ≡⟨ ap _⟦ π ⟧ (make𝑠V v ⁻¹) ⟩
+    makeVar (𝑠V v) ⟦ π ⟧
+      ∎-}
+
+  𝒾𝒹η₂ : {Γ : ctx} → makeRen (IntIdRen Γ) ≡ 𝒾𝒹 Γ
+  𝒾𝒹η₂ {∅} = !η (𝒾𝒹 ∅)
+  𝒾𝒹η₂ {Γ ⊹ A} = {!!}-}
 
 -- The idea is that a contextual functor preserves the contextual structure
 

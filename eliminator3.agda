@@ -137,12 +137,12 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
     Λ (𝑎𝑝𝑝 (interpTm t ⟦ interpTms (W₁Tms A (idTms Γ)) ⟧) 𝑧)
       ∎) i
   interpTm (Zv[] σ t i) =
-    𝑧β (interpTms σ) (interpTm t) i
+    𝑧β (interpTms (σ ⊕ t)) i
   interpTm (Sv[] v σ t i) =
     (interpVar v ⟦ π ⟧ ⟦ interpTms (σ ⊕ t) ⟧
       ≡⟨ ⟦⟧⟦⟧ (interpVar v) π (interpTms (σ ⊕ t)) ⟩
     interpVar v ⟦ π ⊚ (interpTms σ ⊕ interpTm t) ⟧
-      ≡⟨ ap (interpVar v ⟦_⟧) (πβ (interpTms σ) (interpTm t)) ⟩
+      ≡⟨ ap (interpVar v ⟦_⟧) (πβ (interpTms (σ ⊕ t))) ⟩
     interpVar v ⟦ interpTms σ ⟧
       ∎) i
   interpTm (Lam[] {A = A} t σ i) =
