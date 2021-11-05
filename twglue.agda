@@ -85,32 +85,6 @@ module _ where
     TMSよ (GlTms-αs (σ ⊕ t)) ⊚ (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)
       ∎
 
-  {-πGl-nat : {Γ : Glueings} {A : Glueing} →
-    ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ ⊚ π {Gls-⦇Γ⦈ Γ}
-    ≡ (TMSよ (varify (W₁Ren (Gl-A A) (idRen (Gls-Γ Γ)))) ⊚ (ιNFS (Gls-Γ (Γ ⊹ A)) ⊚ Gls-q (Γ ⊹ A)))
-  πGl-nat {∅} = refl
-  πGl-nat {Γ ⊹ B} {A} =
-    {!ιNFS (Gls-Γ (Γ ⊹ B)) ⊚ Gls-q (Γ ⊹ B) ⊚ π {Gls-⦇Γ⦈ (Γ ⊹ B)} {Gl-⦇A⦈ A}
-      ≡⟨ ⊚Assoc (ιNFS (Gls-Γ (Γ ⊹ B))) (Gls-q (Γ ⊹ B)) π ⟩
-    ιNFS (Gls-Γ (Γ ⊹ B)) ⊚ (Gls-q (Γ ⊹ B) ⊚ π)
-      ≡⟨ {!λ i → ιNFS (Gls-Γ (Γ ⊹ B))
-        ⊚ (Gls-q (Γ ⊹ B) ⊚ (πηPSh {Gls-⦇Γ⦈ Γ} {Gl-⦇A⦈ A} {Gl-⦇A⦈ B} i))!} ⟩
-    ιNFS (Gls-Γ (Γ ⊹ B)) ⊚ (Gls-q Γ ×tm Gl-q B
-      ⊚ (W₁PShs (Gls-⦇Γ⦈ (Γ ⊹ B)) (Gl-⦇A⦈ A) π ⊕ W₁PSh (Gls-⦇Γ⦈ (Γ ⊹ B)) (Gl-⦇A⦈ A) 𝑧))
-      ≡⟨ ap (ιNFS (Gls-Γ (Γ ⊹ B)) ⊚_)
-        (×tmLem (Gls-q Γ) (Gl-q B) (W₁PShs (Gls-⦇Γ⦈ (Γ ⊹ B)) (Gl-⦇A⦈ A) π)
-        (W₁PSh (Gls-⦇Γ⦈ (Γ ⊹ B)) (Gl-⦇A⦈ A) 𝑧)) ⟩
-    ?
-      ∎
-    {-  ≡⟨ ap (_⊚_ (ιNFS (Gls-Γ (Γ ⊹ B)) ⊚ Gls-q (Γ ⊹ B))) (πηPSh) ⟩
-    ιNFS (Gls-Γ (Γ ⊹ B)) ⊚ Gls-q (Γ ⊹ B)
-      ⊚ (W₁PShs (Gls-⦇Γ⦈ (Γ ⊹ B)) (Gl-⦇A⦈ A) π ⊕ W₁PSh (Gls-⦇Γ⦈ (Γ ⊹ B)) (Gl-⦇A⦈ A) 𝑧)-}
-    {-  ≡⟨ ⊚Assoc (ιNFS (Gls-Γ (Γ ⊹ B))) (Gls-q (Γ ⊹ B)) π ⟩
-    ιNFS (Gls-Γ (Γ ⊹ B)) ⊚ ( Gls-q (Γ ⊹ B) ⊚ π)
-      (Gls-q Γ ×tm Gl-q B ⊚ W₁PShs (Gls-⦇Γ⦈ (Γ ⊹ B)) (Gl-⦇A⦈ A) (𝒾𝒹 (Gls-⦇Γ⦈ (Γ ⊹ B))))
-      ∎-}
-    --ιNFS (Gls-Γ (Γ ⊹ B)) ⊚ Gls-q Γ ×tm Gl-q B ⊚ W₁PShs (Gls-⦇Γ⦈ (Γ ⊹ B)) (Gl-⦇A⦈ A) (𝒾𝒹 (Gls-⦇Γ⦈ (Γ ⊹ B)))!}-}
-
   _[_]Gl : {Γ Δ : Glueings} {A : Glueing} (t : GlTm Δ A) (σ : GlTms Γ Δ) → GlTm Γ A
   GlTm-⦇α⦈ (t [ σ ]Gl) = GlTm-⦇α⦈ t ⟦ GlTms-⦇αs⦈ σ ⟧
   GlTm-α (t [ σ ]Gl) = GlTm-α t [ GlTms-αs σ ]
@@ -191,59 +165,3 @@ module _ where
   GlTm-⦇α⦈ (makeTwGlVar v) = makeVar (PShVar v)
   GlTm-α (makeTwGlVar v) = C.makeVar (TmVar v)
   GlTm-nat (makeTwGlVar v) = makeNatTransPath (Var-nat-ob v)
-
-  {-PShVar : {Γ : Glueings} {A : Glueing} → Var (Gls-Γ Γ) (Gl-A A) → IntVar (Gls-⦇Γ⦈ Γ) (Gl-⦇A⦈ A)
-  PShVar {Γ ⊹ B} {Gl .(Gl-A B) Gl-⦇A⦈₁ Gl-u₁ Gl-q₁ Gl-comp₁} Zv = {!!}
-  PShVar {Γ ⊹ B} {Gl Gl-A₁ Gl-⦇A⦈₁ Gl-u₁ Gl-q₁ Gl-comp₁} (Sv v) = {!!}-}
-  {-PShVar {Γ ⊹ B} {A} (Zv {Δ} {C}) = {!!}
-  PShVar {Γ ⊹ B} {A} (Sv v) = 𝑠V (PShVar {Γ} {A} v)-}
-
-  {-πGl-nat : {Γ : Glueings} {A : Glueing} →
-    ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ ⊚ π {Gls-⦇Γ⦈ Γ}
-    ≡ (TMSよ C.π) ⊚ (ιNFS (Gls-Γ (Γ ⊹ A)) ⊚ Gls-q (Γ ⊹ A))-}
-
-  {-W₁Gl-nat : {Γ : Glueings} {A B : Glueing} (t : tm (Gls-⦇Γ⦈ Γ) (Gl-⦇A⦈ B))
-    (s : Tm (Gls-Γ Γ) (Gl-A B)) →
-    ((ιNF (Gl-A B) 𝒩∘ Gl-q B) 𝒩∘ t ≡ TMよ s ⟦ ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ ⟧) →
-    ((ιNF (Gl-A B) 𝒩∘ Gl-q B) 𝒩∘ (W₁PSh {Gls-⦇Γ⦈ Γ} (Gl-⦇A⦈ A) t)
-    ≡ (TMよ (W₁Tm (Gl-A A) s) ⟦ ιNFS (Gls-Γ (Γ ⊹ A)) ⊚ Gls-q (Γ ⊹ A) ⟧))
-  W₁Gl-nat {Γ} {A} {B} t s p =
-    {!(ιNF (Gl-A B) 𝒩∘ Gl-q B) 𝒩∘ (t ⟦ π {Gls-⦇Γ⦈ Γ} ⟧)
-      ≡⟨ ⋆Assoc (⇓PShMor π) t (ιNF (Gl-A B) 𝒩∘ Gl-q B) ⟩
-    ((ιNF (Gl-A B) 𝒩∘ Gl-q B) 𝒩∘ t) ⟦ π {Gls-⦇Γ⦈ Γ} ⟧
-      ≡⟨ ap _⟦ π {Gls-⦇Γ⦈ Γ} ⟧ p ⟩
-    TMよ s ⟦ ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ ⟧ ⟦ π {Gls-⦇Γ⦈ Γ} ⟧
-      ≡⟨
-      ∎!}-}
-
-
-  {-𝒾𝒹Gl-nat : {Γ : Glueings} →
-    ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ ⊚ 𝒾𝒹 (Gls-⦇Γ⦈ Γ)
-    ≡ TMSよ (idTms (Gls-Γ Γ)) ⊚ (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)
-  𝒾𝒹Gl-nat {∅} = refl
-  𝒾𝒹Gl-nat {Γ ⊹ A} =
-    {!ιNFS (Gls-Γ (Γ ⊹ A)) ⊚ Gls-q Γ ×tm Gl-q A ⊚ 𝒾𝒹 (Gls-⦇Γ⦈ (Γ ⊹ A))
-      ≡⟨ {!λ i → ιNFS (Gls-Γ (Γ ⊹ A)) ⊚ Gls-q Γ ×tm Gl-q A ⊚ 𝒾𝒹η (~ i)!} ⟩
-    ιNFS (Gls-Γ (Γ ⊹ A)) ⊚ Gls-q Γ ×tm Gl-q A ⊚ (π ⊕ 𝑧)
-      ≡⟨ ⊚Assoc (ιNFS (Gls-Γ (Γ ⊹ A))) (Gls-q Γ ×tm Gl-q A) (π ⊕ 𝑧) ⟩
-    ιNFS (Gls-Γ (Γ ⊹ A)) ⊚ (Gls-q Γ ×tm Gl-q A ⊚ (π ⊕ 𝑧))
-      ≡⟨ ap (_⊚_ (ιNFS (Gls-Γ (Γ ⊹ A)))) (×tmLem (Gls-q Γ) (Gl-q A) π 𝑧) ⟩
-    ιNFS (Gls-Γ Γ) ×tm ιNF (Gl-A A) ⊚ ((Gls-q Γ ⊚ π) ⊕ (Gl-q A 𝒩∘ 𝑧))
-      ≡⟨ ×tmLem (ιNFS (Gls-Γ Γ)) (ιNF (Gl-A A)) (Gls-q Γ ⊚ π) (Gl-q A 𝒩∘ 𝑧) ⟩
-    ιNFS (Gls-Γ Γ) ⊚ (Gls-q Γ ⊚ π) ⊕ (ιNF (Gl-A A) 𝒩∘ Gl-q A 𝒩∘ 𝑧)
-      ∎!}-}
-
-  {-W₁GlTm : {Γ : Glueings} {A B : Glueing} → GlTm Γ B → GlTm (Γ ⊹ A) B
-  GlTm-⦇α⦈ (W₁GlTm {Γ} t) = GlTm-⦇α⦈ t ⟦ π {Gls-⦇Γ⦈ Γ} ⟧
-  GlTm-α (W₁GlTm {A = A} t) = W₁Tm (Gl-A A) (GlTm-α t)
-  GlTm-nat (W₁GlTm {Γ} {A} {B} t) =
-    {!(ιNF (Gl-A B) 𝒩∘ Gl-q B) 𝒩∘ GlTm-⦇α⦈ t ⟦ π {Gls-⦇Γ⦈ Γ} ⟧
-      ≡⟨ ⋆Assoc (⇓PShMor (π {Gls-⦇Γ⦈ Γ})) (GlTm-⦇α⦈ t) (ιNF (Gl-A B) 𝒩∘ Gl-q B) ⟩
-    ((ιNF (Gl-A B) 𝒩∘ Gl-q B) 𝒩∘ GlTm-⦇α⦈ t) ⟦ π {Gls-⦇Γ⦈ Γ} ⟧
-      ≡⟨ ap _⟦ π {Gls-⦇Γ⦈ Γ} ⟧ (GlTm-nat t) ⟩
-    ?
-      ∎!}-}
-
-  {-idGlTms : (Γ : Glueings) → GlTms Γ Γ
-  idGlTms ∅ = !
-  idGlTms (Γ ⊹ A) = {!!} ⊕ {!!}-}

@@ -6,7 +6,6 @@ open import lists public
 
 open import Cubical.Categories.Category
 open import Cubical.Categories.Functor
-open import Cubical.Data.Nat renaming (zero to Z; suc to S)
 
 private
   variable
@@ -173,54 +172,36 @@ record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) wher
   make𝑠V {Γ} {A} {B} v = varβ v π ⁻¹
 
   private 
-    W₁IntRen : {Γ Δ : ctx} (A : ty) → IntRen Γ Δ → IntRen (Γ ⊹ A) Δ
-    W₁IntRen A σ = mapIL 𝑠V σ
+    W₁IntRen : {Γ Δ : ctx} {A : ty} → IntRen Γ Δ → IntRen (Γ ⊹ A) Δ
+    W₁IntRen σ = mapIL 𝑠V σ
 
-    W₂IntRen : {Γ Δ : ctx} (A : ty) → IntRen Γ Δ → IntRen (Γ ⊹ A) (Δ ⊹ A)
-    W₂IntRen A σ = W₁IntRen A σ ⊕ 𝑧V
+    W₂IntRen : {Γ Δ : ctx} {A : ty} → IntRen Γ Δ → IntRen (Γ ⊹ A) (Δ ⊹ A)
+    W₂IntRen σ = W₁IntRen σ ⊕ 𝑧V
 
-  IntIdRen : (Γ : ctx) → IntRen Γ Γ
-  IntIdRen ∅ = !
-  IntIdRen (Γ ⊹ A) = W₂IntRen A (IntIdRen Γ)
+    W₁IntRenLem : {Γ Δ Σ : ctx} {A : ty} (σ : tms Γ Δ) (t : tm Γ A) (v : IntRen Δ Σ) →
+      deriveRen (σ ⊕ t) (W₁IntRen v) ≡ deriveRen σ v
+    W₁IntRenLem σ t ! = refl
+    W₁IntRenLem σ t (τ ⊕ v) i = W₁IntRenLem σ t τ i ⊕ derive σ v
 
-  {-varβ : {Γ Δ : ctx} {A : ty} (v : IntVar Δ A) (σ : tms Γ Δ) →
-    makeVar v ⟦ σ ⟧ ≡ derive σ v
-  varβ 𝑧V σ = 𝑧β σ
-  varβ (𝑠V v) σ = {!varβ v (πIL σ)!}-}
+  idIntRen : (Γ : ctx) → IntRen Γ Γ
+  idIntRen ∅ = !
+  idIntRen (Γ ⊹ A) = W₂IntRen (idIntRen Γ)
 
-  {-makeW₁lem : (Δ : ctx) {Γ : ctx} {A : ty} →
-    makeVar (W₁Var Δ (𝑧V {Γ} {A})) ≡ W₁Tm Δ (makeVar 𝑧V)
-  makeW₁lem ∅ = refl
-  makeW₁lem (∅ ⊹ A) = {!!}
-  makeW₁lem (∅ ⊹ B ⊹ A) = {!!}
-  makeW₁lem (Δ ⊹ C ⊹ B ⊹ A) = {!!}
+  -- Taking apart the variables and putting them back together does nothing
 
-  {-makeW₁ : (Δ : ctx) {Γ : ctx} {A : ty} (v : IntVar Γ A) →
-    makeVar (W₁Var Δ v) ≡ W₁Tm Δ (makeVar v)
-  makeW₁ ∅ {Γ ⊹ B} (𝑠V v) = {!!}
-  makeW₁ (Δ ⊹ C) {Γ ⊹ B} (𝑠V v) =
-    makeVar (𝑠V (W₁Var Δ (𝑠V v)))
-      ≡⟨ makeW₁ (∅ ⊹ C) (W₁Var Δ (𝑠V v)) ⟩
-    makeVar (W₁Var Δ (𝑠V v)) ⟦ π ⟧
-      ≡⟨ ap _⟦ π ⟧ (makeW₁ Δ (𝑠V v)) ⟩
-    W₁Tm Δ (makeVar (𝑠V v)) ⟦ π ⟧
+  derive𝒾𝒹 : {Γ Δ : ctx} (σ : tms Γ Δ) →
+    deriveRen σ (idIntRen Δ) ≡ σ
+  derive𝒾𝒹 ! = refl
+  derive𝒾𝒹 {Γ} {Δ ⊹ A} (σ ⊕ t) =
+    deriveRen (σ ⊕ t) (W₁IntRen (idIntRen Δ)) ⊕ t
+      ≡⟨ ap (_⊕ t) (W₁IntRenLem σ t (idIntRen Δ)) ⟩
+    deriveRen σ (idIntRen Δ) ⊕ t
+      ≡⟨ ap (_⊕ t) (derive𝒾𝒹 σ) ⟩
+    σ ⊕ t
       ∎
-  makeW₁ Δ 𝑧V = {!!}
 
-  make𝑠V : {Γ : ctx} {A B : ty} (v : IntVar Γ A) →
-    makeVar (𝑠V {B = B} v) ≡ makeVar v ⟦ π ⟧
-  make𝑠V {Γ} {A} {B} 𝑧V = 𝑧β π ⁻¹
-  make𝑠V {Γ ⊹ C} {A} {B} (𝑠V v) =
-    makeVar (𝑠V (𝑠V v))
-      ≡⟨ makeW₁ (∅ ⊹ C ⊹ B) v ⟩
-    W₁Tm (∅ ⊹ C ⊹ B) (makeVar v)
-      ≡⟨ ap _⟦ π ⟧ (make𝑠V v ⁻¹) ⟩
-    makeVar (𝑠V v) ⟦ π ⟧
-      ∎-}
-
-  𝒾𝒹η₂ : {Γ : ctx} → makeRen (IntIdRen Γ) ≡ 𝒾𝒹 Γ
-  𝒾𝒹η₂ {∅} = !η (𝒾𝒹 ∅)
-  𝒾𝒹η₂ {Γ ⊹ A} = {!!}-}
+  𝒾𝒹η₂ : {Γ : ctx} → makeRen (idIntRen Γ) ≡ 𝒾𝒹 Γ
+  𝒾𝒹η₂ {Γ} = derive𝒾𝒹 (𝒾𝒹 Γ)
 
 -- The idea is that a contextual functor preserves the contextual structure
 

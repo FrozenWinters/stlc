@@ -60,6 +60,30 @@ mapIL₁ : {ty₁ : Type ℓ₁} {ty₂ : Type ℓ₂} {tm₁ : RL ty₁ → ty�
 mapIL₁ f ! = !
 mapIL₁ f (σ ⊕ t) = mapIL₁ f σ ⊕ f t
 
+-- Variables
+data 𝑉𝑎𝑟 (ty : Type ℓ) : (Γ : RL ty) (A : ty) → Type ℓ where
+  𝑧𝑣 : {Γ : RL ty} {A : ty} → 𝑉𝑎𝑟 ty (Γ ⊹ A) A
+  𝑠𝑣 : {Γ : RL ty} {A B : ty} → 𝑉𝑎𝑟 ty Γ A → 𝑉𝑎𝑟 ty (Γ ⊹ B) A
+
+𝑅𝑒𝑛 : (ty : Type ℓ) → RL ty → RL ty → Type ℓ
+𝑅𝑒𝑛 ty = IL (𝑉𝑎𝑟 ty)
+
+module _ {ty : Type ℓ} where
+  private
+    ctx = RL ty
+  
+  W₁𝑅𝑒𝑛 : {Γ Δ : ctx} {A : ty} → 𝑅𝑒𝑛 ty Γ Δ → 𝑅𝑒𝑛 ty (Γ ⊹ A) Δ
+  W₁𝑅𝑒𝑛 = mapIL 𝑠𝑣
+
+  W₂𝑅𝑒𝑛 : {Γ Δ : ctx} {A : ty} → 𝑅𝑒𝑛 ty Γ Δ → 𝑅𝑒𝑛 ty (Γ ⊹ A) (Δ ⊹ A)
+  W₂𝑅𝑒𝑛 σ = W₁𝑅𝑒𝑛 σ ⊕ 𝑧𝑣
+
+  id𝑅𝑒𝑛 : (Γ : ctx) → 𝑅𝑒𝑛 ty Γ Γ
+  id𝑅𝑒𝑛 ∅ = !
+  id𝑅𝑒𝑛 (Γ ⊹ A) = W₂𝑅𝑒𝑛 (id𝑅𝑒𝑛 Γ)
+
+-- Proofs that things are sets
+
 -- We prove that if tm is a set, then IL tm is a set;
 -- this is mostly taken from the stdlib treatment of lists.
 
