@@ -6,8 +6,10 @@ open import ren2
 open import syn3
 open import psh
 open import contextual
+open import eliminator3
+open import cartesian3
 
-open import Cubical.Data.Nat renaming (zero to Z; suc to S)
+open import Cubical.Data.Nat renaming (zero to Z; suc to S) hiding (elim)
 open import Cubical.Categories.Category
 open import Cubical.Categories.Functor
 
@@ -170,3 +172,17 @@ module _ where
   ιNFS : (Γ : Ctx) → tms (NFS Γ) (TMS Γ)
   ιNFS = weaveTrans ιNF
 
+module _ where
+  open Precategory
+  open Contextual (𝒫𝒮𝒽 REN)
+
+  base : Char → ty
+  base X = NF (Base X)
+
+  module P = CartToCCC (PSh REN)
+
+  open Eliminator (𝒫𝒮𝒽 REN) ⦃ P.ambCCC ⦄ base
+  open ContextualFunctor
+
+  SEM : Ty → ty
+  SEM A = CF-ty elim A

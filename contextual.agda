@@ -108,18 +108,15 @@ record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) wher
 
   -- The identity function includes with it a notion of internal variables
 
-  data IntVar : ctx → ty → Type ℓ₁ where
-    𝑧V : {Γ : ctx} {A : ty} → IntVar (Γ ⊹ A) A
-    𝑠V : {Γ : ctx} {A B : ty} → IntVar Γ A → IntVar (Γ ⊹ B) A
+  IntVar = 𝑉𝑎𝑟 ty
+  IntRen = 𝑅𝑒𝑛 ty
 
   derive : {Γ Δ : ctx} {A : ty} → tms Γ Δ → IntVar Δ A → tm Γ A
-  derive σ 𝑧V = 𝑧IL σ
-  derive σ (𝑠V v) = derive (πIL σ) v
+  derive σ 𝑧𝑣 = 𝑧IL σ
+  derive σ (𝑠𝑣 v) = derive (πIL σ) v
 
   makeVar : {Γ : ctx} {A : ty} → IntVar Γ A → tm Γ A
   makeVar {Γ} = derive (𝒾𝒹 Γ)
-
-  IntRen = IL IntVar
 
   deriveRen : {Γ Δ Σ : ctx} → tms Γ Δ → IntRen Δ Σ → tms Γ Σ
   deriveRen σ = mapIL (derive σ)
@@ -129,12 +126,12 @@ record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) wher
 
   deriveMap : {Γ Δ Σ : ctx} (f : {A : ty} → tm Γ A → tm Δ A) (σ : tms Γ Σ) {A : ty}
     (v : IntVar Σ A) → derive (mapIL f σ) v ≡ f (derive σ v)
-  deriveMap f (σ ⊕ t) 𝑧V = refl
-  deriveMap f (σ ⊕ t) (𝑠V v) = deriveMap f σ v
+  deriveMap f (σ ⊕ t) 𝑧𝑣 = refl
+  deriveMap f (σ ⊕ t) (𝑠𝑣 v) = deriveMap f σ v
 
   derive⟦⟧ : {Γ Δ Σ : ctx} {A : ty} (v : IntVar Σ A) (σ : tms Δ Σ) (τ : tms Γ Δ) →
     derive σ v ⟦ τ ⟧ ≡ derive (σ ⊚ τ) v
-  derive⟦⟧ 𝑧V σ τ =
+  derive⟦⟧ 𝑧𝑣 σ τ =
     𝑧IL σ ⟦ τ ⟧
       ≡⟨ ap _⟦ τ ⟧ (𝑧β σ ⁻¹) ⟩
     𝑧 ⟦ σ ⟧ ⟦ τ ⟧
@@ -143,7 +140,7 @@ record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) wher
       ≡⟨ 𝑧β (σ ⊚ τ) ⟩
     𝑧IL (σ ⊚ τ)
       ∎
-  derive⟦⟧ (𝑠V v) σ τ =
+  derive⟦⟧ (𝑠𝑣 v) σ τ =
     derive (πIL σ) v ⟦ τ ⟧
       ≡⟨ (λ i → derive (πβ σ (~ i)) v ⟦ τ ⟧) ⟩
     derive (π ⊚ σ) v ⟦ τ ⟧
@@ -167,40 +164,41 @@ record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) wher
     derive σ v
       ∎
 
-  make𝑠V : {Γ : ctx} {A B : ty} (v : IntVar Γ A) →
-    makeVar (𝑠V {B = B} v) ≡ makeVar v ⟦ π ⟧
-  make𝑠V {Γ} {A} {B} v = varβ v π ⁻¹
+  make𝑠𝑣 : {Γ : ctx} {A B : ty} (v : IntVar Γ A) →
+    makeVar (𝑠𝑣 {B = B} v) ≡ makeVar v ⟦ π ⟧
+  make𝑠𝑣 {Γ} {A} {B} v = varβ v π ⁻¹
 
-  private 
-    W₁IntRen : {Γ Δ : ctx} {A : ty} → IntRen Γ Δ → IntRen (Γ ⊹ A) Δ
-    W₁IntRen σ = mapIL 𝑠V σ
+  deriveW₁ : {Γ Δ Σ : ctx} {A : ty} (σ : tms Γ Δ) (t : tm Γ A) (v : IntRen Δ Σ) →
+    deriveRen (σ ⊕ t) (W₁𝑅𝑒𝑛 v) ≡ deriveRen σ v
+  deriveW₁ σ t ! = refl
+  deriveW₁ σ t (τ ⊕ v) i = deriveW₁ σ t τ i ⊕ derive σ v
 
-    W₂IntRen : {Γ Δ : ctx} {A : ty} → IntRen Γ Δ → IntRen (Γ ⊹ A) (Δ ⊹ A)
-    W₂IntRen σ = W₁IntRen σ ⊕ 𝑧V
-
-    W₁IntRenLem : {Γ Δ Σ : ctx} {A : ty} (σ : tms Γ Δ) (t : tm Γ A) (v : IntRen Δ Σ) →
-      deriveRen (σ ⊕ t) (W₁IntRen v) ≡ deriveRen σ v
-    W₁IntRenLem σ t ! = refl
-    W₁IntRenLem σ t (τ ⊕ v) i = W₁IntRenLem σ t τ i ⊕ derive σ v
-
-  idIntRen : (Γ : ctx) → IntRen Γ Γ
-  idIntRen ∅ = !
-  idIntRen (Γ ⊹ A) = W₂IntRen (idIntRen Γ)
+  W₁⟦⟧ : {Γ Δ : ctx} {A B : ty} (v : IntVar Δ B) (σ : tms Γ Δ) (t : tm Γ A) →
+    makeVar (𝑠𝑣 v) ⟦ σ ⊕ t ⟧ ≡ makeVar v ⟦ σ ⟧
+  W₁⟦⟧ v σ t =
+    makeVar (𝑠𝑣 v) ⟦ σ ⊕ t ⟧
+      ≡⟨ ap _⟦ σ ⊕ t ⟧ (make𝑠𝑣 v) ⟩
+    makeVar v ⟦ π ⟧ ⟦ σ ⊕ t ⟧
+      ≡⟨ ⟦⟧⟦⟧ (makeVar v) π (σ ⊕ t) ⟩
+    makeVar v ⟦ π ⊚ (σ ⊕ t) ⟧
+      ≡⟨ ap (makeVar v ⟦_⟧) (πβ (σ ⊕ t)) ⟩
+    makeVar v ⟦ σ ⟧
+      ∎
 
   -- Taking apart the variables and putting them back together does nothing
 
   derive𝒾𝒹 : {Γ Δ : ctx} (σ : tms Γ Δ) →
-    deriveRen σ (idIntRen Δ) ≡ σ
+    deriveRen σ (id𝑅𝑒𝑛 Δ) ≡ σ
   derive𝒾𝒹 ! = refl
   derive𝒾𝒹 {Γ} {Δ ⊹ A} (σ ⊕ t) =
-    deriveRen (σ ⊕ t) (W₁IntRen (idIntRen Δ)) ⊕ t
-      ≡⟨ ap (_⊕ t) (W₁IntRenLem σ t (idIntRen Δ)) ⟩
-    deriveRen σ (idIntRen Δ) ⊕ t
+    deriveRen (σ ⊕ t) (W₁𝑅𝑒𝑛 (id𝑅𝑒𝑛 Δ)) ⊕ t
+      ≡⟨ ap (_⊕ t) (deriveW₁ σ t (id𝑅𝑒𝑛 Δ)) ⟩
+    deriveRen σ (id𝑅𝑒𝑛 Δ) ⊕ t
       ≡⟨ ap (_⊕ t) (derive𝒾𝒹 σ) ⟩
     σ ⊕ t
       ∎
 
-  𝒾𝒹η₂ : {Γ : ctx} → makeRen (idIntRen Γ) ≡ 𝒾𝒹 Γ
+  𝒾𝒹η₂ : {Γ : ctx} → makeRen (id𝑅𝑒𝑛 Γ) ≡ 𝒾𝒹 Γ
   𝒾𝒹η₂ {Γ} = derive𝒾𝒹 (𝒾𝒹 Γ)
 
 -- The idea is that a contextual functor preserves the contextual structure

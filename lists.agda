@@ -10,11 +10,11 @@ open import Cubical.Data.Unit as ⊤ renaming (Unit to ⊤)
 
 private
   variable
-    ℓ ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
+    ℓ ℓ₁ ℓ₂ ℓ₃ ℓ₄ ℓ₅ : Level
 
 -- We define the basic data structures used to build contextual categories.
 
--- Reversed List
+-- Reversed List (think contexts)
 infixl 20 _⊹_
 data RL (ty : Type ℓ) : Type ℓ where
   ∅ : RL ty
@@ -28,7 +28,7 @@ mapRLid : {ty : Type ℓ} (Γ : RL ty) → mapRL (λ A → A) Γ ≡ Γ
 mapRLid ∅ = refl
 mapRLid (Γ ⊹ A) i = mapRLid Γ i ⊹ A
 
--- Indexed List
+-- Indexed List (think substitutions)
 infixl 20 _⊕_
 data IL {ty : Type ℓ₁} (tm : RL ty → ty → Type ℓ₂)
      : (Γ Δ : RL ty) → Type (ℓ₁ ⊔ ℓ₂) where
@@ -60,6 +60,24 @@ mapIL₁ : {ty₁ : Type ℓ₁} {ty₂ : Type ℓ₂} {tm₁ : RL ty₁ → ty�
 mapIL₁ f ! = !
 mapIL₁ f (σ ⊕ t) = mapIL₁ f σ ⊕ f t
 
+mapILcomp₁ : {ty₁ : Type ℓ₁} {ty₂ : Type ℓ₂} {tm₁ : RL ty₁ → ty₁ → Type ℓ₃}
+  {tm₂ : RL ty₁ → ty₁ → Type ℓ₄} {tm₃ : RL ty₂ → ty₂ → Type ℓ₅} {Γ₁ Γ₂ Δ : RL ty₁}
+  {Γ₃ : RL ty₂} {P : ty₁ → ty₂} (f : {A : ty₁} → tm₂ Γ₂ A → tm₃ Γ₃ (P A))
+  (g : {A : ty₁} → tm₁ Γ₁ A → tm₂ Γ₂ A)  (σ : IL tm₁ Γ₁ Δ) →
+  mapIL₁ {tm₁ = tm₂} {tm₂ = tm₃} f (mapIL g σ) ≡ mapIL₁ (f ∘ g) σ
+mapILcomp₁ f g ! = refl
+mapILcomp₁ {tm₂ = tm₂} {Γ₂ = Γ₂} f g (σ ⊕ t) i =
+  mapILcomp₁ {tm₂ = tm₂} {Γ₂ = Γ₂} f g σ i ⊕ f (g t)
+
+mapILcomp₂ : {ty₁ : Type ℓ₁} {ty₂ : Type ℓ₂} {tm₁ : RL ty₁ → ty₁ → Type ℓ₃}
+  {tm₂ : RL ty₂ → ty₂ → Type ℓ₄} {tm₃ : RL ty₂ → ty₂ → Type ℓ₅} {Γ₁ Δ : RL ty₁}
+  {Γ₂ Γ₃ : RL ty₂} {P : ty₁ → ty₂} (f : {A : ty₂} → tm₂ Γ₂ A → tm₃ Γ₃ A)
+  (g : {A : ty₁} → tm₁ Γ₁ A → tm₂ Γ₂ (P A))  (σ : IL tm₁ Γ₁ Δ) →
+  mapIL {tm₁ = tm₂} {tm₂ = tm₃} f (mapIL₁ g σ) ≡ mapIL₁ (f ∘ g) σ
+mapILcomp₂ f g ! = refl
+mapILcomp₂ {tm₂ = tm₂} {Γ₂ = Γ₂} f g (σ ⊕ t) i =
+  mapILcomp₂ {tm₂ = tm₂} {Γ₂ = Γ₂} f g σ i ⊕ f (g t)
+
 -- Variables
 data 𝑉𝑎𝑟 (ty : Type ℓ) : (Γ : RL ty) (A : ty) → Type ℓ where
   𝑧𝑣 : {Γ : RL ty} {A : ty} → 𝑉𝑎𝑟 ty (Γ ⊹ A) A
@@ -81,6 +99,28 @@ module _ {ty : Type ℓ} where
   id𝑅𝑒𝑛 : (Γ : ctx) → 𝑅𝑒𝑛 ty Γ Γ
   id𝑅𝑒𝑛 ∅ = !
   id𝑅𝑒𝑛 (Γ ⊹ A) = W₂𝑅𝑒𝑛 (id𝑅𝑒𝑛 Γ)
+
+tr𝑉𝑎𝑟 : {ty₁ : Type ℓ₁} {ty₂ : Type ℓ₂} (f : ty₁ → ty₂) {Γ : RL ty₁} {A : ty₁}
+  → 𝑉𝑎𝑟 ty₁ Γ A → 𝑉𝑎𝑟 ty₂ (mapRL f Γ) (f A)
+tr𝑉𝑎𝑟 f 𝑧𝑣 = 𝑧𝑣
+tr𝑉𝑎𝑟 f (𝑠𝑣 v) = 𝑠𝑣 (tr𝑉𝑎𝑟 f v)
+
+tr𝑅𝑒𝑛 : {ty₁ : Type ℓ₁} {ty₂ : Type ℓ₂} (f : ty₁ → ty₂) {Γ Δ : RL ty₁}
+  → 𝑅𝑒𝑛 ty₁ Γ Δ → 𝑅𝑒𝑛 ty₂ (mapRL f Γ) (mapRL f Δ)
+tr𝑅𝑒𝑛 f = mapIL₁ (tr𝑉𝑎𝑟 f)
+
+trId : {ty₁ : Type ℓ₁} {ty₂ : Type ℓ₂} (f : ty₁ → ty₂) (Γ : RL ty₁) →
+  tr𝑅𝑒𝑛 f (id𝑅𝑒𝑛 Γ) ≡ id𝑅𝑒𝑛 (mapRL f Γ)
+trId f ∅ = refl
+trId f (Γ ⊹ A) =
+  mapIL₁ (tr𝑉𝑎𝑟 f) (mapIL 𝑠𝑣 (id𝑅𝑒𝑛 Γ)) ⊕ 𝑧𝑣
+    ≡⟨ ap (_⊕ 𝑧𝑣) (mapILcomp₁ (tr𝑉𝑎𝑟 f) 𝑠𝑣 (id𝑅𝑒𝑛 Γ)) ⟩
+  mapIL₁ (𝑠𝑣 ∘ (tr𝑉𝑎𝑟 f)) (id𝑅𝑒𝑛 Γ) ⊕ 𝑧𝑣
+    ≡⟨ ap (_⊕ 𝑧𝑣) (mapILcomp₂ 𝑠𝑣 (tr𝑉𝑎𝑟 f) (id𝑅𝑒𝑛 Γ) ⁻¹) ⟩
+  W₂𝑅𝑒𝑛 (tr𝑅𝑒𝑛 f (id𝑅𝑒𝑛 Γ))
+    ≡⟨ ap W₂𝑅𝑒𝑛 (trId f Γ) ⟩
+  W₂𝑅𝑒𝑛 (id𝑅𝑒𝑛 (mapRL f Γ))
+    ∎
 
 -- Proofs that things are sets
 

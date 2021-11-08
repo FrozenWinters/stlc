@@ -304,11 +304,12 @@ module CartToCCC {ℓ₁ ℓ₂} (𝒞 : Precategory ℓ₁ ℓ₂)
 
   open CCC
 
-  ambCCC : CCC ambCC
-  _⇛_ ambCCC = C-⇒
-  Λ ambCCC {Γ} {A} {B} = C-Λ (⇓Ctx Γ) A B
-  𝑎𝑝𝑝 ambCCC {Γ} {A} {B} = C-App (⇓Ctx Γ) A B
-  Λnat ambCCC {Γ} {Δ} {A} {B} t σ = ΛnatTm t σ
-  𝑎𝑝𝑝β ambCCC {Γ} = 𝑎𝑝𝑝βTm {Γ}
-  𝑎𝑝𝑝η ambCCC {Γ} = 𝑎𝑝𝑝ηTm {Γ}
+  instance
+    ambCCC : CCC ambCC
+    _⇛_ ambCCC = C-⇒
+    Λ ambCCC {Γ} {A} {B} = C-Λ (⇓Ctx Γ) A B
+    𝑎𝑝𝑝 ambCCC {Γ} {A} {B} = C-App (⇓Ctx Γ) A B
+    Λnat ambCCC {Γ} {Δ} {A} {B} t σ = ΛnatTm t σ
+    𝑎𝑝𝑝β ambCCC {Γ} = 𝑎𝑝𝑝βTm {Γ}
+    𝑎𝑝𝑝η ambCCC {Γ} = 𝑎𝑝𝑝ηTm {Γ}
 
