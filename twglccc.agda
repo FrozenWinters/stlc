@@ -14,7 +14,7 @@ open import Cubical.Data.Sigma
 open import Cubical.Categories.Category
 open import Cubical.Categories.Functor
 open import Cubical.Categories.Presheaf
-open import Cubical.Categories.NaturalTransformation
+open import Cubical.Categories.NaturalTransformation hiding (_⟦_⟧)
 open import Cubical.Categories.Instances.Sets
 
 module _ where
@@ -22,6 +22,7 @@ module _ where
   open Functor
   open Cartesian (PShCart {𝒞 = REN})
   open Precategory (PSh REN) hiding (_∘_)
+  open Contextual (𝒫𝒮𝒽 REN ⦃ isCatRen ⦄ ⦃ PShCat ⦄) 
   open NatTrans
   module R = Contextual ρεν
 
@@ -195,3 +196,105 @@ module _ where
   N-hom (Gl-q (A ⇒TwGl B)) σ i (α , p) = N-hom (q-A⇒B A B) σ i α
   
   Gl-comp (A ⇒TwGl B) = makeNatTransPath (λ i → N-ob (comp-A⇒B A B i))
+
+  open GlTm
+  open PShFam
+
+  ΛTwGL-nat-ob : {Γ : Glueings} {A B : Glueing} → (t : GlTm (Γ ⊹ A) B) →
+    N-ob ((ιNF (A-A⇒B A B) 𝒩∘ q-A⇒B A B) 𝒩∘ (C-Λ _ _ _ (GlTm-⦇α⦈ t)))
+    ≡ N-ob (TMよ (Lam (GlTm-α t)) ⟦ ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ ⟧)
+  ΛTwGL-nat-ob {Γ} {A} {B} t i Δ 𝓈 =
+    (Lam (ιNf (N-ob (Gl-q B) (Δ ⊹ 𝐴) (N-ob (GlTm-⦇α⦈ t) (Δ ⊹ Gl-A A)
+      (F-hom (⇓PSh (Gls-⦇Γ⦈ Γ)) (W₁Ren 𝐴 (idRen Δ)) 𝓈 ,
+        N-ob (Gl-u A) (Δ ⊹ 𝐴) (VN Zv)))))
+      ≡⟨ (λ j → Lam (N-ob (GlTm-nat t j) (Δ ⊹ 𝐴)
+        (F-hom (⇓PSh (Gls-⦇Γ⦈ Γ)) (W₁Ren 𝐴 (idRen Δ)) 𝓈 ,
+          N-ob (Gl-u A) (Δ ⊹ 𝐴) (VN Zv)))) ⟩
+    Lam (N-ob (TMよ (GlTm-α t) ⟦ ιNFS (Gls-Γ (Γ ⊹ A)) ⊚ Gls-q (Γ ⊹ A) ⟧)
+      (Δ ⊹ Gl-A A) (F-hom (⇓PSh (Gls-⦇Γ⦈ Γ)) (W₁Ren (Gl-A A) (idRen Δ)) 𝓈 ,
+        N-ob (Gl-u A) (Δ ⊹ 𝐴) (VN Zv)))
+      ≡⟨ ap Lam (indLem Γ A B (GlTm-α t) (F-hom (⇓PSh (Gls-⦇Γ⦈ Γ)) (W₁Ren 𝐴 (idRen Δ)) 𝓈)
+        (N-ob (Gl-u A) (Δ ⊹ 𝐴) (VN Zv))) ⟩
+    Lam (GlTm-α t [
+      ⇓TMS (N-ob (⇓PShMor (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) (Δ ⊹ 𝐴)
+        (F-hom (⇓PSh (Gls-⦇Γ⦈ Γ)) (W₁Ren 𝐴 (idRen Δ)) 𝓈))
+      ⊕ ιNf (N-ob (Gl-q A) (Δ ⊹ 𝐴) (N-ob (Gl-u A) (Δ ⊹ 𝐴) (VN Zv))) ])
+      ≡⟨ (λ j → Lam (GlTm-α t [
+        ⇓TMS (N-hom (⇓PShMor (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) (W₁Ren 𝐴 (idRen Δ)) j 𝓈)
+        ⊕ N-ob (Gl-comp A j) (Δ ⊹ 𝐴) (VN Zv) ])) ⟩
+    Lam (GlTm-α t [
+      ⇓TMS (F-hom (⇓PSh (TMS (Gls-Γ Γ))) (W₁Ren 𝐴 (idRen Δ))
+        (N-ob (⇓PShMor (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Δ 𝓈))
+      ⊕ V Zv ])
+      ≡⟨ (λ j → Lam (GlTm-α t [
+        ⇓TMSHom (N-ob (⇓PShMor (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Δ 𝓈) (W₁Ren 𝐴 (idRen Δ)) j
+        ⊕ V Zv ])) ⟩
+    Lam (GlTm-α t [ W₂Tms 𝐴 (⇓TMS (N-ob (⇓PShMor (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Δ 𝓈)) ])
+      ≡⟨ Lam[] (GlTm-α t) (⇓TMS (N-ob (⇓PShMor (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Δ 𝓈)) ⁻¹ ⟩
+    N-ob (TMよ (Lam (GlTm-α t)) ⟦ ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ ⟧) Δ 𝓈
+      ∎) i where
+        𝐴 = (Gl-A A)
+
+  ΛTwGL : {Γ : Glueings} {A B : Glueing} → GlTm (Γ ⊹ A) B → GlTm Γ (A ⇒TwGl B)
+  N-ob (GlTm-⦇α⦈ (ΛTwGL {Γ} {A} {B} t)) Δ 𝓈 = N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t)) Δ 𝓈 ,
+    λ Σ σ x →
+      (App (ιNf (N-ob (q-A⇒B A B) Δ (N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t)) Δ 𝓈) [ σ ]NF))
+        (ιNf (N-ob (Gl-q A) Σ x))
+        ≡⟨ (λ i → App (ιNfLem (N-ob (q-A⇒B A B) Δ (N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t)) Δ 𝓈)) σ i)
+          (ιNf (N-ob (Gl-q A) Σ x))) ⟩
+      App (ιNf (N-ob (q-A⇒B A B) Δ (N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t)) Δ 𝓈)) [ varify σ ])
+        (ιNf (N-ob (Gl-q A) Σ x))
+        ≡⟨ (λ i → App (ΛTwGL-nat-ob t i Δ 𝓈 [ varify σ ]) (ιNf (N-ob (Gl-q A) Σ x))) ⟩
+      App (Lam (GlTm-α t) [ ⇓TMS (N-ob (⇓PShMor (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Δ 𝓈) ] [ varify σ ])
+        (ιNf (N-ob (Gl-q A) Σ x))
+        ≡⟨ (λ i → App ([][] (Lam (GlTm-α t))
+          (⇓TMS (N-ob (⇓PShMor (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Δ 𝓈)) (varify σ) i)
+          (ιNf (N-ob (Gl-q A) Σ x))) ⟩
+      App (Lam (GlTm-α t) [ ⇓TMS (N-ob (⇓PShMor (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Δ 𝓈) ∘Tms varify σ ])
+        (ιNf (N-ob (Gl-q A) Σ x))
+        ≡⟨ (λ i → App (Lam (GlTm-α t)
+          [ ⇓TMSHom (N-ob (⇓PShMor (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Δ 𝓈) σ (~ i) ])
+          (ιNf (N-ob (Gl-q A) Σ x))) ⟩
+      App (Lam (GlTm-α t)
+        [ ⇓TMS (F-hom (⇓PSh (TMS (Gls-Γ Γ))) σ (N-ob (⇓PShMor (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Δ 𝓈)) ])
+        (ιNf (N-ob (Gl-q A) Σ x))
+        ≡⟨ (λ i → App (Lam[] (GlTm-α t)
+          (⇓TMS (N-hom (⇓PShMor (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) σ (~ i) 𝓈)) i)
+          (ιNf (N-ob (Gl-q A) Σ x))) ⟩
+      App (Lam (GlTm-α t
+        [ W₂Tms (Gl-A A) (⇓TMS (N-ob (⇓PShMor (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Σ
+          (F-hom (⇓PSh (Gls-⦇Γ⦈ Γ)) σ 𝓈))) ])) (ιNf (N-ob (Gl-q A) Σ x))
+        ≡⟨ β (GlTm-α t
+          [ W₂Tms (Gl-A A) (⇓TMS (N-ob (⇓PShMor (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Σ
+            (F-hom (⇓PSh (Gls-⦇Γ⦈ Γ)) σ 𝓈))) ]) (ιNf (N-ob (Gl-q A) Σ x)) ⟩
+      GlTm-α t
+        [ W₂Tms (Gl-A A) (⇓TMS (N-ob (⇓PShMor (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Σ
+          (F-hom (⇓PSh (Gls-⦇Γ⦈ Γ)) σ 𝓈))) ] [ idTms Σ ⊕ ιNf (N-ob (Gl-q A) Σ x) ]
+        ≡⟨ lem (GlTm-α t) (⇓TMS (N-ob (⇓PShMor (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Σ
+          (F-hom (⇓PSh (Gls-⦇Γ⦈ Γ)) σ 𝓈))) (ιNf (N-ob (Gl-q A) Σ x)) ⟩
+      GlTm-α t [ ⇓TMS (N-ob (⇓PShMor (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Σ
+          (F-hom (⇓PSh (Gls-⦇Γ⦈ Γ)) σ 𝓈)) ⊕ ιNf (N-ob (Gl-q A) Σ x) ]
+        ≡⟨ indLem Γ A B (GlTm-α t) (F-hom (⇓PSh (Gls-⦇Γ⦈ Γ)) σ 𝓈) x ⁻¹ ⟩
+      N-ob (TMよ (GlTm-α t) ⟦ ιNFS (Gls-Γ (Γ ⊹ A)) ⊚ Gls-q Γ ×tm Gl-q A ⟧)
+        Σ (F-hom (⇓PSh (Gls-⦇Γ⦈ Γ)) σ 𝓈 , x)
+        ≡⟨ (λ i → N-ob (GlTm-nat t (~ i)) Σ (F-hom (⇓PSh (Gls-⦇Γ⦈ Γ)) σ 𝓈 , x)) ⟩
+      ιNf (N-ob (Gl-q B) Σ (N-ob (GlTm-⦇α⦈ t) Σ (F-hom (⇓PSh (Gls-⦇Γ⦈ Γ)) σ 𝓈 , x)))
+        ∎) ⁻¹ where
+        lem : {Γ Δ : Ctx} {A B : Ty} (t : Tm (Δ ⊹ A) B) (σ : Tms Γ Δ) (s : Tm Γ A) →
+          t [ W₂Tms A σ ] [ idTms Γ ⊕ s ] ≡ t [ σ ⊕ s ]
+        lem {Γ} {Δ} {A} t σ s =
+          t [ W₂Tms A σ ] [ idTms Γ ⊕ s ]
+            ≡⟨ [][] t (W₂Tms A σ) (idTms Γ ⊕ s) ⟩
+          t [ W₁Tms A σ ∘Tms (idTms Γ ⊕ s)  ⊕ V Zv [ idTms Γ ⊕ s ] ]
+            ≡⟨ (λ i → t [ Wlem1 σ (idTms Γ) s i ⊕ Zv[] (idTms Γ) s i ]) ⟩
+          t [ σ ∘Tms idTms Γ ⊕ s ]
+            ≡⟨ (λ i → t [ ∘TmsIdR σ i ⊕ s ]) ⟩
+          t [ σ ⊕ s ]
+            ∎
+  N-hom (GlTm-⦇α⦈ (ΛTwGL {Γ} {A} {B} t)) {Δ} {Σ} σ i α =
+    (subtypeLem (⦇A⇒B⦈-ob A B Σ)
+      (N-ob (GlTm-⦇α⦈ (ΛTwGL t)) Σ (F-hom (⇓PSh (Gls-⦇Γ⦈ Γ)) σ α))
+      (F-hom (Gl-⦇A⦈ (A ⇒TwGl B)) σ (N-ob (GlTm-⦇α⦈ (ΛTwGL t)) Δ α))
+      (λ j → N-hom (C-Λ _ _ _ (GlTm-⦇α⦈ t)) σ j α)) i
+  GlTm-α (ΛTwGL t) = Lam (GlTm-α t)
+  GlTm-nat (ΛTwGL {Γ} {A} {B} t) = makeNatTransPath (ΛTwGL-nat-ob t)
