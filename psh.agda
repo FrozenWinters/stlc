@@ -365,6 +365,7 @@ module PShFam {-{ℓ : Level} (𝒞 : Contextual ℓ ℓ)-} where
   ⇓PShMor = ⇓tms
   ⇓∘PShMor = ⇓∘tms
   ⇓πPSh = ⇓π
+  ⇓idPSh = ⇓idtms
 
   {-W₁PSh = W₁tm
   W₁PShs = W₁tms-}

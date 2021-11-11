@@ -247,6 +247,7 @@ module CartToCCC {ℓ₁ ℓ₂} (𝒞 : Precategory ℓ₁ ℓ₂)
   ⇓ctx = ⇓Ctx
   ⇓tms = ⇓Tms
   ⇓∘tms = ⇓∘Tms
+  ⇓idtms = ⇓idTms
 
   {-W₁tm = W₁Tm
   W₁tms = W₁Tms-}

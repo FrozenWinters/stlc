@@ -1,4 +1,4 @@
-{-# OPTIONS --cubical #-}
+{-# OPTIONS --cubical --allow-unsolved-metas #-}
 
 module twglccc where
 
@@ -25,6 +25,7 @@ module _ where
   open Contextual (𝒫𝒮𝒽 REN ⦃ isCatRen ⦄ ⦃ PShCat ⦄) 
   open NatTrans
   module R = Contextual ρεν
+  module G = Contextual TwGl
 
   private
     infixr 20 _𝒩∘_
@@ -200,10 +201,10 @@ module _ where
   open GlTm
   open PShFam
 
-  ΛTwGL-nat-ob : {Γ : Glueings} {A B : Glueing} → (t : GlTm (Γ ⊹ A) B) →
+  ΛTwGl-nat-ob : {Γ : Glueings} {A B : Glueing} → (t : GlTm (Γ ⊹ A) B) →
     N-ob ((ιNF (A-A⇒B A B) 𝒩∘ q-A⇒B A B) 𝒩∘ (C-Λ _ _ _ (GlTm-⦇α⦈ t)))
     ≡ N-ob (TMよ (Lam (GlTm-α t)) ⟦ ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ ⟧)
-  ΛTwGL-nat-ob {Γ} {A} {B} t i Δ 𝓈 =
+  ΛTwGl-nat-ob {Γ} {A} {B} t i Δ 𝓈 =
     (Lam (ιNf (N-ob (Gl-q B) (Δ ⊹ 𝐴) (N-ob (GlTm-⦇α⦈ t) (Δ ⊹ Gl-A A)
       (F-hom (⇓PSh (Gls-⦇Γ⦈ Γ)) (W₁Ren 𝐴 (idRen Δ)) 𝓈 ,
         N-ob (Gl-u A) (Δ ⊹ 𝐴) (VN Zv)))))
@@ -235,8 +236,8 @@ module _ where
       ∎) i where
         𝐴 = (Gl-A A)
 
-  ΛTwGL : {Γ : Glueings} {A B : Glueing} → GlTm (Γ ⊹ A) B → GlTm Γ (A ⇒TwGl B)
-  N-ob (GlTm-⦇α⦈ (ΛTwGL {Γ} {A} {B} t)) Δ 𝓈 = N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t)) Δ 𝓈 ,
+  ΛTwGl : {Γ : Glueings} {A B : Glueing} → GlTm (Γ ⊹ A) B → GlTm Γ (A ⇒TwGl B)
+  N-ob (GlTm-⦇α⦈ (ΛTwGl {Γ} {A} {B} t)) Δ 𝓈 = N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t)) Δ 𝓈 ,
     λ Σ σ x →
       (App (ιNf (N-ob (q-A⇒B A B) Δ (N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t)) Δ 𝓈) [ σ ]NF))
         (ιNf (N-ob (Gl-q A) Σ x))
@@ -244,7 +245,7 @@ module _ where
           (ιNf (N-ob (Gl-q A) Σ x))) ⟩
       App (ιNf (N-ob (q-A⇒B A B) Δ (N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t)) Δ 𝓈)) [ varify σ ])
         (ιNf (N-ob (Gl-q A) Σ x))
-        ≡⟨ (λ i → App (ΛTwGL-nat-ob t i Δ 𝓈 [ varify σ ]) (ιNf (N-ob (Gl-q A) Σ x))) ⟩
+        ≡⟨ (λ i → App (ΛTwGl-nat-ob t i Δ 𝓈 [ varify σ ]) (ιNf (N-ob (Gl-q A) Σ x))) ⟩
       App (Lam (GlTm-α t) [ ⇓TMS (N-ob (⇓PShMor (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Δ 𝓈) ] [ varify σ ])
         (ιNf (N-ob (Gl-q A) Σ x))
         ≡⟨ (λ i → App ([][] (Lam (GlTm-α t))
@@ -291,13 +292,13 @@ module _ where
             ≡⟨ (λ i → t [ ∘TmsIdR σ i ⊕ s ]) ⟩
           t [ σ ⊕ s ]
             ∎
-  N-hom (GlTm-⦇α⦈ (ΛTwGL {Γ} {A} {B} t)) {Δ} {Σ} σ i α =
+  N-hom (GlTm-⦇α⦈ (ΛTwGl {Γ} {A} {B} t)) {Δ} {Σ} σ i α =
     (subtypeLem (⦇A⇒B⦈-ob A B Σ)
-      (N-ob (GlTm-⦇α⦈ (ΛTwGL t)) Σ (F-hom (⇓PSh (Gls-⦇Γ⦈ Γ)) σ α))
-      (F-hom (Gl-⦇A⦈ (A ⇒TwGl B)) σ (N-ob (GlTm-⦇α⦈ (ΛTwGL t)) Δ α))
+      (N-ob (GlTm-⦇α⦈ (ΛTwGl t)) Σ (F-hom (⇓PSh (Gls-⦇Γ⦈ Γ)) σ α))
+      (F-hom (Gl-⦇A⦈ (A ⇒TwGl B)) σ (N-ob (GlTm-⦇α⦈ (ΛTwGl t)) Δ α))
       (λ j → N-hom (C-Λ _ _ _ (GlTm-⦇α⦈ t)) σ j α)) i
-  GlTm-α (ΛTwGL t) = Lam (GlTm-α t)
-  GlTm-nat (ΛTwGL {Γ} {A} {B} t) = makeNatTransPath (ΛTwGL-nat-ob t)
+  GlTm-α (ΛTwGl t) = Lam (GlTm-α t)
+  GlTm-nat (ΛTwGl {Γ} {A} {B} t) = makeNatTransPath (ΛTwGl-nat-ob t)
 
   GlTm-⦇α⦈forget : {Γ : Glueings} {A B : Glueing} → GlTm Γ (A ⇒TwGl B) →
     tm (Gls-⦇Γ⦈ Γ) (C-⇒ (Gl-⦇A⦈ A) (Gl-⦇A⦈ B))
@@ -328,3 +329,138 @@ module _ where
   GlTm-⦇α⦈ (AppTwGl t s) = C-App _ _ _ (GlTm-⦇α⦈forget t) (GlTm-⦇α⦈ s)
   GlTm-α (AppTwGl t s) = App (GlTm-α t) (GlTm-α s)
   GlTm-nat (AppTwGl t s) = makeNatTransPath (AppTwGl-nat-ob t s)
+
+  {-ΛTwGl-nat : {Γ Δ : Glueings} {A B : Glueing} (t : GlTm (Δ ⊹ A) B) (σ : GlTms Γ Δ) →
+    ΛTwGl t [ σ ]Gl ≡ ΛTwGl (t [ (σ ∘GlTms G.π) ⊕ G.𝑧 ]Gl)
+  ΛTwGl-nat {Γ} {Δ} {A} {B} t σ = {!!}
+
+  AppGlTmβ : {Γ : Glueings} {A B : Glueing} (t : GlTm (Γ ⊹ A) B) (s : GlTm Γ A) →
+    AppTwGl (ΛTwGl t) s ≡ t [ idTwGl Γ ⊕ s ]Gl
+  AppGlTmβ {Γ} t s = {!!}
+  
+  𝐴𝑝𝑝TwGl : {Γ : Glueings} {A B : Glueing} → GlTm Γ (A ⇒TwGl B) → GlTm (Γ ⊹ A) B
+  𝐴𝑝𝑝TwGl t = AppTwGl (t [ G.π ]Gl) G.𝑧
+
+  AppGlTmη : {Γ : Glueings} {A B : Glueing} (t : GlTm Γ (A ⇒TwGl B)) →
+    t ≡ ΛTwGl (𝐴𝑝𝑝TwGl t)
+  AppGlTmη = {!!}-}
+
+  open CCC
+
+  isCCCTwGl : CCC TwGl
+  _⇛_ isCCCTwGl = _⇒TwGl_
+  Λ isCCCTwGl = ΛTwGl
+  𝑎𝑝𝑝 isCCCTwGl = AppTwGl
+  Λnat isCCCTwGl = {!ΛTwGl-nat!}
+  𝑎𝑝𝑝β isCCCTwGl = {!AppGlTmβ!}
+  𝑎𝑝𝑝η isCCCTwGl = {!AppGlTmη!}
+
+  {-≡GlTm : {Γ : Glueings} {A : Glueing} {t s : GlTm Γ A} →
+    N-ob (GlTm-⦇α⦈ t) ≡ N-ob (GlTm-⦇α⦈ s) → GlTm-α t ≡ GlTm-α s → t ≡ s
+  GlTm-⦇α⦈ (≡GlTm {t = t} {s} p q i) = makeNatTransPath {α = GlTm-⦇α⦈ t} {β = GlTm-⦇α⦈ s} p i
+  GlTm-α (≡GlTm {t = t} {s} p q i) = q i
+  GlTm-nat (≡GlTm {Γ} {A} {t} {s} p q i) j =
+    isSet→SquareP (λ i j → isSetNat)
+      (GlTm-nat t)
+      (GlTm-nat s)
+      (λ k → (ιNF (Gl-A A) 𝒩∘ Gl-q A) 𝒩∘ (GlTm-⦇α⦈ (≡GlTm {t = t} {s} p q k)))
+      (λ k → TMよ (GlTm-α (≡GlTm {t = t} {s} p q k)) ⟦ ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ ⟧) i j
+
+  ≡GlTm⇒ : {Γ : Glueings} {A B : Glueing} {t s : GlTm Γ (A ⇒TwGl B)} →
+    ((Δ : Ctx) → (𝓈 : fst (F-ob (⇓PSh (Gls-⦇Γ⦈ Γ)) Δ))
+      → fst (N-ob (GlTm-⦇α⦈ t) Δ 𝓈) ≡ fst (N-ob (GlTm-⦇α⦈ s) Δ 𝓈)) →
+    GlTm-α t ≡ GlTm-α s → t ≡ s
+  ≡GlTm⇒ {Γ} {A} {B} {t} {s} p q =
+    ≡GlTm
+      (λ i Δ 𝓈 →
+        (subtypeLem (⦇A⇒B⦈-ob A B Δ)
+          (N-ob (GlTm-⦇α⦈ t) Δ 𝓈)
+          (N-ob (GlTm-⦇α⦈ s) Δ 𝓈)
+          (p Δ 𝓈)) i) q
+
+  𝑧TwGl-⦇α⦈ : {Γ : Glueings} {A : Glueing} → GlTm-⦇α⦈ (G.𝑧 {Γ} {A}) ≡ 𝑧 {Gls-⦇Γ⦈ Γ}
+  𝑧TwGl-⦇α⦈ {Γ} {A} = ap 𝑧IL (idTwGl-⦇αs⦈ {Γ ⊹ A})
+
+  πTwGl-⦇αs⦈ : {Γ : Glueings} {A : Glueing} → GlTms-⦇αs⦈ (G.π {Γ} {A}) ≡ π {Gls-⦇Γ⦈ Γ}
+  πTwGl-⦇αs⦈ {Γ} {A} = ap πIL (idTwGl-⦇αs⦈ {Γ ⊹ A})
+
+  ΛTwGl-nat-⦇α⦈-ob : {Γ Δ : Glueings} {A B : Glueing} (t : GlTm (Δ ⊹ A) B) (σ : GlTms Γ Δ)
+    (Σ : Ctx) (𝓈 : fst (F-ob (⇓PSh (Gls-⦇Γ⦈ Γ)) Σ)) →
+    fst (N-ob (GlTm-⦇α⦈ (ΛTwGl t [ σ ]Gl)) Σ 𝓈)
+    ≡ fst (N-ob (GlTm-⦇α⦈ (ΛTwGl (t [ (σ ∘GlTms (G.π {Γ} {A})) ⊕ G.𝑧 {Γ} {A} ]Gl))) Σ 𝓈)
+  ΛTwGl-nat-⦇α⦈-ob {Γ} {Δ} {A} {B} t σ Σ 𝓈 =
+    {!N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t)) Σ (N-ob (⇓PShMor (GlTms-⦇αs⦈ σ)) Σ 𝓈)
+      ≡⟨ (λ i → N-ob (C-Λnat _ _ _ _ (⇓PShMor (GlTms-⦇αs⦈ σ)) (GlTm-⦇α⦈ t) (~ i)) Σ 𝓈) ⟩
+    N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t 𝒩∘ (C-pair (⇓PShMor (GlTms-⦇αs⦈ σ) 𝒩∘ C-π₁ _ _) 𝑧))) Σ 𝓈
+      ≡⟨ (λ i → N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t 𝒩∘
+        (C-pair (⇓PShMor (GlTms-⦇αs⦈ σ) 𝒩∘ ⇓πPSh {Gls-⦇Γ⦈ Γ} {Gl-⦇A⦈ A} (~ i)) 𝑧))) Σ 𝓈) ⟩
+    N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t 𝒩∘
+      (C-pair (⇓PShMor (GlTms-⦇αs⦈ σ) 𝒩∘ ⇓PShMor (π {Gls-⦇Γ⦈ Γ} {Gl-⦇A⦈ A})) 𝑧))) Σ 𝓈
+      ≡⟨ (λ i → N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t 𝒩∘
+        (C-pair (⇓∘PShMor (GlTms-⦇αs⦈ σ) (π {Gls-⦇Γ⦈ Γ} {Gl-⦇A⦈ A}) (~ i)) 𝑧))) Σ 𝓈) ⟩
+    N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t ⟦ GlTms-⦇αs⦈ σ ⊚ (π {Gls-⦇Γ⦈ Γ} {Gl-⦇A⦈ A})
+      ⊕ 𝑧 {Gls-⦇Γ⦈ Γ} {Gl-⦇A⦈ A} ⟧)) Σ 𝓈
+      ≡⟨ (λ i → N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t ⟦ GlTms-⦇αs⦈ σ ⊚ πTwGl-⦇αs⦈ {Γ} {A} (~ i)
+        ⊕ 𝑧TwGl-⦇α⦈ {Γ} {A} (~ i) ⟧))  Σ 𝓈) ⟩
+    N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t ⟦ GlTms-⦇αs⦈ σ ⊚ GlTms-⦇αs⦈ (G.π {Γ} {A})
+      ⊕ GlTm-⦇α⦈ (G.𝑧 {Γ} {A}) ⟧)) Σ 𝓈
+      ≡⟨ (λ i → N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t ⟦ Gl-⦇αs⦈∘ σ (G.π {Γ} {A}) (~ i)
+        ⊕ GlTm-⦇α⦈ (G.𝑧 {Γ} {A}) ⟧)) Σ 𝓈) ⟩
+    N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t ⟦ GlTms-⦇αs⦈ ((σ ∘GlTms (G.π {Γ} {A}))
+      ⊕ (G.𝑧 {Γ} {A})) ⟧)) Σ 𝓈
+      ∎!}
+
+  𝑧TwGl-α : {Γ : Glueings} {A : Glueing} → GlTm-α (G.𝑧 {Γ} {A}) ≡ V Zv
+  𝑧TwGl-α {Γ} {A} = ap 𝑧IL (idTwGl-αs {Γ ⊹ A})
+
+  πTwGl-αs : {Γ : Glueings} {A : Glueing} →
+    GlTms-αs (G.π {Γ} {A}) ≡ varify (W₁Ren (Gl-A A) (idRen (Gls-Γ Γ)))
+  πTwGl-αs {Γ} {A} = ap πIL (idTwGl-αs {Γ ⊹ A})
+
+  ΛTwGl-nat : {Γ Δ : Glueings} {A B : Glueing} (t : GlTm (Δ ⊹ A) B) (σ : GlTms Γ Δ) →
+    ΛTwGl t [ σ ]Gl ≡ ΛTwGl (t [ (σ ∘GlTms G.π) ⊕ G.𝑧 ]Gl)
+  ΛTwGl-nat {Γ} {Δ} {A} {B} t σ =
+    ≡GlTm⇒
+      (ΛTwGl-nat-⦇α⦈-ob t σ)
+      (Lam (GlTm-α t) [ GlTms-αs σ ]
+        ≡⟨ Lam[] (GlTm-α t) (GlTms-αs σ) ⟩
+      Lam (GlTm-α t [ W₂Tms (Gl-A A) (GlTms-αs σ) ])
+        ≡⟨ (λ i → Lam (GlTm-α t [ GlTms-αs σ ∘Tms πTwGl-αs {Γ} {A} (~ i)
+          ⊕ 𝑧TwGl-α {Γ} {A} (~ i) ])) ⟩
+      Lam (GlTm-α t [ GlTms-αs σ ∘Tms GlTms-αs (G.π {Γ} {A}) ⊕ GlTm-α (G.𝑧 {Γ} {A}) ])
+        ≡⟨ (λ i → Lam (GlTm-α t [ Gl-αs∘ σ (G.π {Γ} {A}) (~ i) ⊕ GlTm-α (G.𝑧 {Γ} {A}) ])) ⟩
+      Lam (GlTm-α t [ GlTms-αs (σ ∘GlTms (G.π {Γ} {A})) ⊕ GlTm-α (G.𝑧 {Γ} {A}) ])
+        ∎)
+
+  AppGlTmβ-⦇α⦈-ob : {Γ : Glueings} {A B : Glueing} (t : GlTm (Γ ⊹ A) B) (s : GlTm Γ A) →
+    N-ob (GlTm-⦇α⦈ (AppTwGl (ΛTwGl t) s)) ≡ N-ob (GlTm-⦇α⦈ (t [ idTwGl Γ ⊕ s ]Gl))
+  AppGlTmβ-⦇α⦈-ob {Γ} {A} {B} t s i Δ 𝓈 =
+    (N-ob (GlTm-⦇α⦈ t) Δ (F-hom (⇓PSh (Gls-⦇Γ⦈ Γ)) (idRen Δ) 𝓈 ,  N-ob (GlTm-⦇α⦈ s) Δ 𝓈)
+      ≡⟨ (λ j → N-ob (GlTm-⦇α⦈ t) Δ (F-id (⇓PSh (Gls-⦇Γ⦈ Γ)) j 𝓈 ,  N-ob (GlTm-⦇α⦈ s) Δ 𝓈)) ⟩
+    N-ob (GlTm-⦇α⦈ t) Δ (𝓈 , N-ob (GlTm-⦇α⦈ s) Δ 𝓈)
+      ≡⟨ (λ j → N-ob (GlTm-⦇α⦈ t) Δ (N-ob (⇓idPSh (Gls-⦇Γ⦈ Γ) (~ j)) Δ 𝓈
+        , N-ob (GlTm-⦇α⦈ s) Δ 𝓈)) ⟩
+    N-ob (GlTm-⦇α⦈ t) Δ (N-ob (⇓PShMor (𝒾𝒹 (Gls-⦇Γ⦈ Γ))) Δ 𝓈 , N-ob (GlTm-⦇α⦈ s) Δ 𝓈)
+      ≡⟨ (λ j → N-ob (GlTm-⦇α⦈ t) Δ (N-ob (⇓PShMor (idTwGl-⦇αs⦈ {Γ} (~ j))) Δ 𝓈
+        , N-ob (GlTm-⦇α⦈ s) Δ 𝓈)) ⟩
+    N-ob (GlTm-⦇α⦈ t) Δ (N-ob (⇓PShMor (GlTms-⦇αs⦈ (idTwGl Γ))) Δ 𝓈 , N-ob (GlTm-⦇α⦈ s) Δ 𝓈)
+      ∎) i
+
+  AppGlTmβ : {Γ : Glueings} {A B : Glueing} (t : GlTm (Γ ⊹ A) B) (s : GlTm Γ A) →
+    AppTwGl (ΛTwGl t) s ≡ t [ idTwGl Γ ⊕ s ]Gl
+  AppGlTmβ {Γ} t s =
+    ≡GlTm
+      (AppGlTmβ-⦇α⦈-ob t s)
+      (App (Lam (GlTm-α t)) (GlTm-α s)
+        ≡⟨ β (GlTm-α t) (GlTm-α s) ⟩
+      GlTm-α t [ idTms (mapRL Gl-A Γ) ⊕ GlTm-α s ]
+        ≡⟨ (λ i → GlTm-α t [ idTwGl-αs {Γ} (~ i) ⊕ GlTm-α s  ]) ⟩
+      GlTm-α t [ GlTms-αs (idTwGl Γ ⊕ s) ]
+        ∎)
+
+  𝐴𝑝𝑝TwGl : {Γ : Glueings} {A B : Glueing} → GlTm Γ (A ⇒TwGl B) → GlTm (Γ ⊹ A) B
+  𝐴𝑝𝑝TwGl t = AppTwGl (t [ G.π ]Gl) G.𝑧
+
+  AppGlTmη : {Γ : Glueings} {A B : Glueing} (t : GlTm Γ (A ⇒TwGl B)) →
+    t ≡ ΛTwGl (𝐴𝑝𝑝TwGl t)
+  AppGlTmη = {!!}-}

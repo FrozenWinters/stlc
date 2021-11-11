@@ -310,7 +310,7 @@ module _ where
   private
     module D = Contextual
 
-  {-TwGl : Contextual (lsuc lzero) (lsuc lzero)
+  TwGl : Contextual (lsuc lzero) (lsuc lzero)
   D.ty TwGl = Glueing
   D.tm TwGl = GlTm
   D._⟦_⟧ TwGl = _[_]Gl
@@ -318,4 +318,4 @@ module _ where
   D.𝒾𝒹L TwGl = idTwGlL
   D.𝒾𝒹⟦⟧ TwGl = idTwGl[]
   D.⟦⟧⟦⟧ TwGl = [][]TwGl
-  D.isSetTm TwGl = isSetGlTm-}
+  D.isSetTm TwGl = isSetGlTm
