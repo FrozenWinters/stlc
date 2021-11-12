@@ -18,12 +18,12 @@ record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) wher
   field
     ty : Type ℓ₁
     
-  ctx = RL ty
+  ctx = 𝐶𝑡𝑥 ty
   
   field
     tm : ctx → ty → Type ℓ₂
 
-  tms = IL tm
+  tms = 𝑇𝑚𝑠 tm
 
   infixl 30 _⟦_⟧
   field
@@ -31,7 +31,7 @@ record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) wher
 
   infixl 20 _⊚_
   _⊚_ : {Γ Δ Σ : ctx} → tms Δ Σ → tms Γ Δ → tms Γ Σ
-  σ ⊚ τ = mapIL _⟦ τ ⟧ σ
+  σ ⊚ τ = map𝑇𝑚𝑠 _⟦ τ ⟧ σ
 
   field
     𝒾𝒹 : (Γ : ctx) → tms Γ Γ
@@ -51,7 +51,7 @@ record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) wher
   ⊚Assoc (σ ⊕ t) τ μ i = ⊚Assoc σ τ μ i ⊕ ⟦⟧⟦⟧ t τ μ i
 
   private
-    module P = ILPath tm isSetTm
+    module P = 𝑇𝑚𝑠Path tm isSetTm
 
   isSetTms = P.isSetTms
 
@@ -68,9 +68,8 @@ record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) wher
   ⋆IdR ambCat = 𝒾𝒹L
   ⋆Assoc ambCat μ τ σ = ⊚Assoc σ τ μ ⁻¹
 
-  instance
-    isCatAmbCat : isCategory ambCat
-    isSetHom isCatAmbCat = isSetTms
+  isCatAmbCat : isCategory ambCat
+  isSetHom isCatAmbCat = isSetTms
 
   -- ∅ is automatically the terminal object with unique morphism !
 
@@ -80,13 +79,13 @@ record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) wher
   -- Contextual categories automatically have products
 
   π : {Γ : ctx} {A : ty} → tms (Γ ⊹ A) Γ
-  π {Γ} {A} = πIL (𝒾𝒹 (Γ ⊹ A))
+  π {Γ} {A} = π𝑇𝑚𝑠 (𝒾𝒹 (Γ ⊹ A))
 
   𝑧 : {Γ : ctx} {A : ty} → tm (Γ ⊹ A) A
-  𝑧 {Γ} {A} = 𝑧IL (𝒾𝒹 (Γ ⊹ A))
+  𝑧 {Γ} {A} = 𝑧𝑇𝑚𝑠 (𝒾𝒹 (Γ ⊹ A))
 
   𝒾𝒹η : {Γ : ctx} {A : ty} → π ⊕ 𝑧 ≡ 𝒾𝒹 (Γ ⊹ A) 
-  𝒾𝒹η {Γ} {A} = π𝑧ηIL (𝒾𝒹 (Γ ⊹ A))
+  𝒾𝒹η {Γ} {A} = π𝑧η𝑇𝑚𝑠 (𝒾𝒹 (Γ ⊹ A))
 
   π𝑧η : {Γ Δ : ctx} {A : ty} (σ : tms Γ (Δ ⊹ A)) →
     (π ⊚ σ) ⊕ (𝑧 ⟦ σ ⟧) ≡ σ
@@ -99,12 +98,12 @@ record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) wher
       ∎
 
   πβ : {Γ Δ : ctx} {A : ty} (σ : tms Γ (Δ ⊹ A)) →
-    π ⊚ σ ≡ πIL σ
-  πβ σ = ap πIL (π𝑧η σ)
+    π ⊚ σ ≡ π𝑇𝑚𝑠 σ
+  πβ σ = ap π𝑇𝑚𝑠 (π𝑧η σ)
 
   𝑧β : {Γ Δ : ctx} {A : ty} (σ : tms Γ (Δ ⊹ A)) →
-    𝑧 ⟦ σ ⟧ ≡ 𝑧IL σ
-  𝑧β σ = ap 𝑧IL (π𝑧η σ)
+    𝑧 ⟦ σ ⟧ ≡ 𝑧𝑇𝑚𝑠 σ
+  𝑧β σ = ap 𝑧𝑇𝑚𝑠 (π𝑧η σ)
 
   -- The identity function includes with it a notion of internal variables
 
@@ -112,36 +111,36 @@ record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) wher
   IntRen = 𝑅𝑒𝑛 ty
 
   derive : {Γ Δ : ctx} {A : ty} → tms Γ Δ → IntVar Δ A → tm Γ A
-  derive σ 𝑧𝑣 = 𝑧IL σ
-  derive σ (𝑠𝑣 v) = derive (πIL σ) v
+  derive σ 𝑧𝑣 = 𝑧𝑇𝑚𝑠 σ
+  derive σ (𝑠𝑣 v) = derive (π𝑇𝑚𝑠 σ) v
 
   makeVar : {Γ : ctx} {A : ty} → IntVar Γ A → tm Γ A
   makeVar {Γ} = derive (𝒾𝒹 Γ)
 
   deriveRen : {Γ Δ Σ : ctx} → tms Γ Δ → IntRen Δ Σ → tms Γ Σ
-  deriveRen σ = mapIL (derive σ)
+  deriveRen σ = map𝑇𝑚𝑠 (derive σ)
 
   makeRen : {Γ Δ : ctx} → IntRen Γ Δ → tms Γ Δ
   makeRen {Γ} = deriveRen (𝒾𝒹 Γ)
 
   deriveMap : {Γ Δ Σ : ctx} (f : {A : ty} → tm Γ A → tm Δ A) (σ : tms Γ Σ) {A : ty}
-    (v : IntVar Σ A) → derive (mapIL f σ) v ≡ f (derive σ v)
+    (v : IntVar Σ A) → derive (map𝑇𝑚𝑠 f σ) v ≡ f (derive σ v)
   deriveMap f (σ ⊕ t) 𝑧𝑣 = refl
   deriveMap f (σ ⊕ t) (𝑠𝑣 v) = deriveMap f σ v
 
   derive⟦⟧ : {Γ Δ Σ : ctx} {A : ty} (v : IntVar Σ A) (σ : tms Δ Σ) (τ : tms Γ Δ) →
     derive σ v ⟦ τ ⟧ ≡ derive (σ ⊚ τ) v
   derive⟦⟧ 𝑧𝑣 σ τ =
-    𝑧IL σ ⟦ τ ⟧
+    𝑧𝑇𝑚𝑠 σ ⟦ τ ⟧
       ≡⟨ ap _⟦ τ ⟧ (𝑧β σ ⁻¹) ⟩
     𝑧 ⟦ σ ⟧ ⟦ τ ⟧
       ≡⟨ ⟦⟧⟦⟧ 𝑧 σ τ ⟩
     𝑧 ⟦ σ ⊚ τ ⟧
       ≡⟨ 𝑧β (σ ⊚ τ) ⟩
-    𝑧IL (σ ⊚ τ)
+    𝑧𝑇𝑚𝑠 (σ ⊚ τ)
       ∎
   derive⟦⟧ (𝑠𝑣 v) σ τ =
-    derive (πIL σ) v ⟦ τ ⟧
+    derive (π𝑇𝑚𝑠 σ) v ⟦ τ ⟧
       ≡⟨ (λ i → derive (πβ σ (~ i)) v ⟦ τ ⟧) ⟩
     derive (π ⊚ σ) v ⟦ τ ⟧
       ≡⟨ ap _⟦ τ ⟧ (derive⟦⟧ v π σ ⁻¹) ⟩
@@ -151,7 +150,7 @@ record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) wher
       ≡⟨ derive⟦⟧ v π (σ ⊚ τ) ⟩
     derive (π ⊚ (σ ⊚ τ)) v
       ≡⟨ (λ i → derive (πβ (σ ⊚ τ) i) v) ⟩
-    derive (πIL (σ ⊚ τ)) v
+    derive (π𝑇𝑚𝑠 (σ ⊚ τ)) v
       ∎
 
   varβ : {Γ Δ : ctx} {A : ty} (v : IntVar Δ A) (σ : tms Γ Δ) →
@@ -215,13 +214,13 @@ record ContextualFunctor (𝒞 : Contextual ℓ₁ ℓ₂) (𝒟 : Contextual �
     CF-ty : ty 𝒞 → ty 𝒟
 
   CF-ctx : ctx 𝒞 → ctx 𝒟
-  CF-ctx Γ = mapRL CF-ty Γ
+  CF-ctx Γ = map𝐶𝑡𝑥 CF-ty Γ
 
   field
     CF-tm : {Γ : ctx 𝒞} {A : ty 𝒞} → tm 𝒞 Γ A → tm 𝒟 (CF-ctx Γ) (CF-ty A)
 
   CF-tms : {Γ Δ : ctx 𝒞} → tms 𝒞 Γ Δ → tms 𝒟 (CF-ctx Γ) (CF-ctx Δ)
-  CF-tms σ = mapIL₁ CF-tm σ
+  CF-tms σ = map𝑇𝑚𝑠₁ CF-tm σ
 
   field
     CF-id : {Γ : ctx 𝒞} → CF-tms (𝒾𝒹 𝒞 Γ) ≡ 𝒾𝒹 𝒟 (CF-ctx Γ)

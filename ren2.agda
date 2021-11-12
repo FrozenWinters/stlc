@@ -14,38 +14,35 @@ data Ty : Set where
   Base : Char → Ty
   _⇒_ : Ty → Ty → Ty
 
-Ctx = RL Ty
+Ctx = 𝐶𝑡𝑥 Ty
 
 -- Intrinsically well-typed de Bruijn Variables
 
-data Var : Ctx → Ty → Set where
-  Zv : {Γ : Ctx} {A : Ty} → Var (Γ ⊹ A) A
-  Sv : {Γ : Ctx} {A B : Ty} → Var Γ A → Var (Γ ⊹ B) A
+Var = 𝑉𝑎𝑟 Ty
 
 -- A Renaming is a list of variables
 
-Ren = IL Var
+Ren = 𝑇𝑚𝑠 Var
 
 -- Now we exhibit some structure of Renamings
 
 W₁Ren : {Γ Δ : Ctx} (A : Ty) → Ren Γ Δ → Ren (Γ ⊹ A) Δ
-W₁Ren A σ = mapIL Sv σ
+W₁Ren A σ = map𝑇𝑚𝑠 𝑠𝑣 σ
 
 W₂Ren : {Γ Δ : Ctx} (A : Ty) → Ren Γ Δ → Ren (Γ ⊹ A) (Δ ⊹ A)
-W₂Ren A σ = W₁Ren A σ ⊕ Zv
+W₂Ren A σ = W₁Ren A σ ⊕ 𝑧𝑣
 
 idRen : (Γ : Ctx) → Ren Γ Γ
-idRen ∅ = !
-idRen (Γ ⊹ A) = W₂Ren A (idRen Γ)
+idRen Γ = id𝑅𝑒𝑛 Γ
 
 infix 30 _[_]R
 _[_]R : {Γ Δ : Ctx} {A : Ty} → Var Δ A → Ren Γ Δ → Var Γ A
-Zv [ σ ⊕ v ]R = v
-Sv v [ σ ⊕ w ]R = v [ σ ]R
+𝑧𝑣 [ σ ⊕ v ]R = v
+𝑠𝑣 v [ σ ⊕ w ]R = v [ σ ]R
 
 infixl 30 _∘Ren_
 _∘Ren_ : {Γ Δ Σ : Ctx} → Ren Δ Σ → Ren Γ Δ → Ren Γ Σ
-σ ∘Ren τ = mapIL _[ τ ]R σ
+σ ∘Ren τ = map𝑇𝑚𝑠 _[ τ ]R σ
 
 Wlem1Ren : {Γ Δ Σ : Ctx} {A : Ty} (σ : Ren Δ Σ) (τ : Ren Γ Δ) (v : Var Γ A) →
   W₁Ren A σ ∘Ren (τ ⊕ v) ≡ σ ∘Ren τ
@@ -53,9 +50,9 @@ Wlem1Ren ! τ v = refl
 Wlem1Ren (σ ⊕ w) τ v = ap (_⊕ w [ τ ]R) (Wlem1Ren σ τ v)
 
 Wlem2Ren : {Γ Δ : Ctx} {A B : Ty} (v : Var Δ A) (σ : Ren Γ Δ) →
-  v [ W₁Ren B σ ]R ≡ Sv (v [ σ ]R)
-Wlem2Ren Zv (σ ⊕ v) = refl
-Wlem2Ren (Sv v) (σ ⊕ w) = Wlem2Ren v σ
+  v [ W₁Ren B σ ]R ≡ 𝑠𝑣 (v [ σ ]R)
+Wlem2Ren 𝑧𝑣 (σ ⊕ v) = refl
+Wlem2Ren (𝑠𝑣 v) (σ ⊕ w) = Wlem2Ren v σ
 
 Wlem3Ren : {Γ Δ Σ : Ctx} {A : Ty} (σ : Ren Δ Σ) (τ : Ren Γ Δ) →
   σ ∘Ren W₁Ren A τ ≡ W₁Ren A (σ ∘Ren τ)
@@ -66,10 +63,10 @@ Wlem4Ren : {Γ Δ Σ : Ctx} {A : Ty} (σ : Ren Δ Σ) (τ : Ren Γ Δ) →
   W₂Ren A σ ∘Ren W₂Ren A τ ≡ W₂Ren A (σ ∘Ren τ)
 Wlem4Ren ! τ = refl
 Wlem4Ren {A = A} (σ ⊕ v) τ =
-  W₁Ren A σ ∘Ren (W₁Ren A τ ⊕ Zv) ⊕ v [ W₁Ren A τ ]R ⊕ Zv
-    ≡⟨ (λ i → Wlem1Ren σ (W₁Ren A τ) Zv i ⊕ Wlem2Ren v τ i ⊕ Zv) ⟩
-  σ ∘Ren W₁Ren A τ ⊕ Sv (v [ τ ]R) ⊕ Zv
-    ≡⟨ (λ i → Wlem3Ren σ τ i ⊕ Sv (v [ τ ]R) ⊕ Zv) ⟩
+  W₁Ren A σ ∘Ren (W₁Ren A τ ⊕ 𝑧𝑣) ⊕ v [ W₁Ren A τ ]R ⊕ 𝑧𝑣
+    ≡⟨ (λ i → Wlem1Ren σ (W₁Ren A τ) 𝑧𝑣 i ⊕ Wlem2Ren v τ i ⊕ 𝑧𝑣) ⟩
+  σ ∘Ren W₁Ren A τ ⊕ 𝑠𝑣 (v [ τ ]R) ⊕ 𝑧𝑣
+    ≡⟨ (λ i → Wlem3Ren σ τ i ⊕ 𝑠𝑣 (v [ τ ]R) ⊕ 𝑧𝑣) ⟩
   W₂Ren A (σ ∘Ren τ ⊕ v [ τ ]R)
     ∎
 
@@ -80,8 +77,8 @@ Wlem5Ren (σ ⊕ v) τ i = Wlem5Ren σ τ i ⊕ Wlem2Ren v τ i
 
 [][]Ren : {Γ Δ Σ : Ctx} {A : Ty} (v : Var Σ A) (σ : Ren Δ Σ) (τ : Ren Γ Δ) →
   v [ σ ]R [ τ ]R ≡ v [ σ ∘Ren τ ]R
-[][]Ren Zv (σ ⊕ v) τ = refl
-[][]Ren (Sv v) (σ ⊕ w) τ = [][]Ren v σ τ
+[][]Ren 𝑧𝑣 (σ ⊕ v) τ = refl
+[][]Ren (𝑠𝑣 v) (σ ⊕ w) τ = [][]Ren v σ τ
 
 ∘RenAssoc : {Γ Δ Σ Ω : Ctx} (σ : Ren Σ Ω) (τ : Ren Δ Σ) (μ : Ren Γ Δ) →
   σ ∘Ren τ ∘Ren μ ≡ σ ∘Ren (τ ∘Ren μ)
@@ -100,13 +97,13 @@ Wlem5Ren (σ ⊕ v) τ i = Wlem5Ren σ τ i ⊕ Wlem2Ren v τ i
 
 [id]Ren : {Γ : Ctx} {A : Ty} (v : Var Γ A) →
   v [ idRen Γ ]R ≡ v
-[id]Ren Zv = refl
-[id]Ren {Γ ⊹ B} {A} (Sv v) =
+[id]Ren 𝑧𝑣 = refl
+[id]Ren {Γ ⊹ B} {A} (𝑠𝑣 v) =
   v [ W₁Ren B (idRen Γ) ]R
     ≡⟨ Wlem2Ren v (idRen Γ) ⟩
-  Sv (v [ idRen Γ ]R)
-    ≡⟨ ap Sv ([id]Ren v) ⟩
-  Sv v
+  𝑠𝑣 (v [ idRen Γ ]R)
+    ≡⟨ ap 𝑠𝑣 ([id]Ren v) ⟩
+  𝑠𝑣 v
     ∎
 
 isSetVar : {Γ : Ctx} {A : Ty} → isSet (Var Γ A)
@@ -132,4 +129,4 @@ module _ where
 
   instance
     isCatRen : isCategory REN
-    isCatRen .isSetHom = isSetTms ρεν
+    isCatRen = isCatAmbCat ρεν

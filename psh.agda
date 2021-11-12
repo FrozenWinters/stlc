@@ -9,8 +9,6 @@ open import cartesian3
 open import Cubical.Data.Sigma
 open import Cubical.Categories.Category
 open import Cubical.Categories.Functor
-open import Cubical.Categories.NaturalTransformation
-open import Cubical.Categories.Presheaf
 open import Cubical.Categories.Instances.Sets hiding (isSetLift)
 open import Cubical.Data.Unit as ⊤ renaming (Unit to ⊤)
 open import Cubical.Data.Empty as ⊥
@@ -42,14 +40,19 @@ module SETCartesian {ℓ : Level} where
 
 -- Onto presheaves
 
-PSh : ∀ {ℓ} (𝒞 : Precategory ℓ ℓ) → ⦃ isCategory 𝒞 ⦄ → Precategory (lsuc ℓ) ℓ
-PSh {ℓ} 𝒞  = PreShv 𝒞 ℓ
+module _ where
+  open import Cubical.Categories.Presheaf
+
+  PSh : ∀ {ℓ} (𝒞 : Precategory ℓ ℓ) → ⦃ isCategory 𝒞 ⦄ → Precategory (lsuc ℓ) ℓ
+  PSh {ℓ} 𝒞  = PreShv 𝒞 ℓ
 
 module PShCartesian {ℓ : Level} (𝒞 : Precategory ℓ ℓ) ⦃ C-cat : isCategory 𝒞 ⦄ where
+  open import Cubical.Categories.NaturalTransformation
   open Precategory
   open Functor
   open NatTrans
   open SETCartesian
+  open import Cubical.Categories.Presheaf
 
   private
     C = 𝒞
@@ -240,6 +243,7 @@ module PShCartesian {ℓ : Level} (𝒞 : Precategory ℓ ℓ) ⦃ C-cat : isCat
       (λ k → F-hom (⇒PSh G H) a (N-ob (AppηPSh F G H α k) y₁ t)) i j
 
 module _ {ℓ : Level} {𝒞 : Precategory ℓ ℓ} ⦃ C-cat : isCategory 𝒞 ⦄ where
+  open import Cubical.Categories.Presheaf
   open PShCartesian 𝒞
   open Cartesian
 
@@ -270,63 +274,32 @@ module _ {ℓ : Level} (𝒞 : Precategory ℓ ℓ) ⦃ C-cat : isCategory 𝒞 
    open CartToCCC (PSh 𝒞)
 
    𝒫𝒮𝒽 = ambCC
-
-module _ {ℓ : Level} {𝒞 : Precategory ℓ ℓ} ⦃ C-cat : isCategory 𝒞 ⦄ where
-   open CartToCCC (PSh 𝒞)
-
-   instance
-     𝒫𝒮𝒽CCC = ambCCC
-
-   {-⇓PSh = ⇓ctx
-   ⇓PShMor = ⇓tms-}
+   𝒫𝒮𝒽CCC = ambCCC
 
 open import ren2
 
 -- Unification times blow up if this module gets paramterised!
-module PShFam {-{ℓ : Level} (𝒞 : Contextual ℓ ℓ)-} where
+module _ where
   private
-    --ren = Contextual.ambCat ρεν
     module C = Contextual ρεν
-    module PC = Contextual (𝒫𝒮𝒽 REN ⦃ C.isCatAmbCat ⦄ ⦃ PShCat ⦄)
 
-  open Contextual (𝒫𝒮𝒽 REN ⦃ C.isCatAmbCat ⦄ ⦃ PShCat ⦄)
+  open Contextual (𝒫𝒮𝒽 REN)
   open Precategory (PSh REN) hiding (_∘_)
   open CartToCCC (PSh REN) ⦃ PShCat ⦄ ⦃ PShCart ⦄
-  open CCC (ambCCC)
+  open CCC (𝒫𝒮𝒽CCC REN)
 
   private
     infixr 20 _𝒩∘_
-    _𝒩∘_ = comp' (PSh REN)
-
-  
-
-  {-PresheafBundle = RL (ob × ob)
-
-  PBfst : PresheafBundle → ctx
-  PBfst = mapRL fst
-
-  PBsnd : PresheafBundle → ctx
-  PBsnd = mapRL snd
-
-  TransBundle : PresheafBundle → Type lzero
-  TransBundle ∅ = ⊤
-  TransBundle (PS ⊹ (A , B)) = TransBundle PS × Hom[ A , B ]-}
+    _𝒩∘_ = comp' (PSh REN ⦃ C.isCatAmbCat ⦄)
 
   PresheafFamily = C.ty → ob
   PresheavesFamily = C.ctx → ctx
 
   plurify : PresheafFamily → PresheavesFamily
-  plurify 𝒫 = mapRL 𝒫
+  plurify 𝒫 = map𝐶𝑡𝑥 𝒫
 
   TransFamily : (𝒫 𝒬 : PresheafFamily) → Type lzero
   TransFamily 𝒫 𝒬 = (A : C.ty) → Hom[ 𝒫 A , 𝒬 A ]
-
-  {-TFtoTB : {𝒫 𝒬 : PresheafFamily} (𝒜 : TransFamily 𝒫 𝒬) (Γ : C.ctx) →
-    TransBundle (mapRL (λ A → 𝒫 A , 𝒬 A) Γ)
-  TFtoTB 𝒜 ∅ = tt
-  TFtoTB 𝒜 (Γ ⊹ A) = TFtoTB 𝒜 Γ , 𝒜 A-}
-
-  
 
   infixl 30 _×tm_
   _×tm_ : {Γ Δ : ctx} {A B : ty} → tms Γ Δ → Hom[ A , B ] → tms (Γ ⊹ A) (Δ ⊹ B)
@@ -343,7 +316,7 @@ module PShFam {-{ℓ : Level} (𝒞 : Contextual ℓ ℓ)-} where
   ×tmLem1 {Γ} {Δ} σ t τ s =
     σ ⊚ π ⊕ (t 𝒩∘ 𝑧 {Δ}) ⊚ (τ ⊕ s)
       ≡⟨ ⊕⊚ (σ ⊚ π) (t 𝒩∘ 𝑧 {Δ}) (τ ⊕ s) ⟩
-    σ ⊚ π ⊚ (τ ⊕ s) ⊕ (t 𝒩∘ 𝑧 {Δ}) PC.⟦ τ ⊕ s ⟧
+    σ ⊚ π ⊚ (τ ⊕ s) ⊕ (t 𝒩∘ 𝑧 {Δ}) ⟦ τ ⊕ s ⟧
       ≡⟨ (λ i → ⊚Assoc σ π (τ ⊕ s) i ⊕ ⊚πlem t τ s i) ⟩
     σ ⊚ (π ⊚ (τ ⊕ s)) ⊕ (t 𝒩∘ s)
       ≡⟨ (λ i → σ ⊚ (πβ (τ ⊕ s) i) ⊕ (t 𝒩∘ s)) ⟩

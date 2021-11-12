@@ -16,7 +16,7 @@ open import Cubical.Categories.Instances.Sets
 -- that we will be normalising, as well as the rules by which we will do so.
 
 data Tm : Ctx → Ty → Set
-Tms = IL Tm
+Tms = 𝑇𝑚𝑠 Tm
 
 infixl 20 _∘Tms_
 _∘Tms_ : {Γ Δ Σ : Ctx} → Tms Δ Σ → Tms Γ Δ → Tms Γ Σ
@@ -36,12 +36,12 @@ data Tm where
   β : {Γ : Ctx} {A B : Ty} (t : Tm (Γ ⊹ A) B) (s : Tm Γ A) →
     App (Lam t) s ≡ t [ idTms Γ ⊕ s ]
   η : {Γ : Ctx} {A B : Ty} (t : Tm Γ (A ⇒ B)) →
-    t ≡ Lam (App (t [ W₁Tms A (idTms Γ) ]) (V Zv))
+    t ≡ Lam (App (t [ W₁Tms A (idTms Γ) ]) (V 𝑧𝑣))
 
-  Zv[] : {Γ Δ : Ctx} {A : Ty} (σ : Tms Γ Δ) (t : Tm Γ A)
-    → V Zv [ σ ⊕ t ] ≡ t
-  Sv[] : {Γ Δ : Ctx} {A B : Ty} (v : Var Δ A) (σ : Tms Γ Δ) (t : Tm Γ B) →
-    V (Sv v) [ σ ⊕ t ] ≡ V v [ σ ]
+  𝑧𝑣[] : {Γ Δ : Ctx} {A : Ty} (σ : Tms Γ Δ) (t : Tm Γ A)
+    → V 𝑧𝑣 [ σ ⊕ t ] ≡ t
+  𝑠𝑣[] : {Γ Δ : Ctx} {A B : Ty} (v : Var Δ A) (σ : Tms Γ Δ) (t : Tm Γ B) →
+    V (𝑠𝑣 v) [ σ ⊕ t ] ≡ V v [ σ ]
   Lam[] : {Γ Δ : Ctx} {A B : Ty} (t : Tm (Δ ⊹ A) B) (σ : Tms Γ Δ) →
     Lam t [ σ ] ≡ Lam (t [ W₂Tms A σ ])
   App[] : {Γ Δ : Ctx} {A B : Ty} (t : Tm Δ (A ⇒ B)) (s : Tm Δ A) (σ : Tms Γ Δ) →
@@ -53,10 +53,10 @@ data Tm where
 
   trunc : {Γ : Ctx} {A : Ty} → isSet (Tm Γ A)
 
-σ ∘Tms τ = mapIL _[ τ ] σ
+σ ∘Tms τ = map𝑇𝑚𝑠 _[ τ ] σ
 
 varify : {Γ Δ : Ctx} → Ren Γ Δ → Tms Γ Δ
-varify σ = mapIL V σ
+varify σ = map𝑇𝑚𝑠 V σ
 
 idTms Γ = varify (idRen Γ)
 
@@ -65,7 +65,7 @@ W₁Tm {Γ} A t = t [ varify (W₁Ren A (idRen Γ)) ]
 
 W₁Tms {Γ} A σ = σ ∘Tms varify (W₁Ren A (idRen Γ))
 
-W₂Tms A σ = W₁Tms A σ ⊕ V Zv
+W₂Tms A σ = W₁Tms A σ ⊕ V 𝑧𝑣
 
 ∘TmsAssoc : {Γ Δ Σ Ω : Ctx} (σ : Tms Σ Ω) (τ : Tms Δ Σ) (μ : Tms Γ Δ) →
   σ ∘Tms τ ∘Tms μ ≡ σ ∘Tms (τ ∘Tms μ)
@@ -76,25 +76,25 @@ W₂Tms A σ = W₁Tms A σ ⊕ V Zv
 
 Vlem0 : {Γ Δ : Ctx} {A : Ty} (v : Var Δ A) (σ : Ren Γ Δ) →
   V (v [ σ ]R) ≡ (V v) [ varify σ ]
-Vlem0 Zv (σ ⊕ w) = Zv[] (varify σ) (V w) ⁻¹
-Vlem0 (Sv v) (σ ⊕ w) =
+Vlem0 𝑧𝑣 (σ ⊕ w) = 𝑧𝑣[] (varify σ) (V w) ⁻¹
+Vlem0 (𝑠𝑣 v) (σ ⊕ w) =
   V (v [ σ ]R)
     ≡⟨ Vlem0 v σ ⟩
   V v [ varify σ ]
-    ≡⟨ Sv[] v (varify σ) (V w) ⁻¹ ⟩
-  V (Sv v) [ varify σ ⊕ V w ]
+    ≡⟨ 𝑠𝑣[] v (varify σ) (V w) ⁻¹ ⟩
+  V (𝑠𝑣 v) [ varify σ ⊕ V w ]
     ∎
 
 W₁V : {Γ : Ctx} {A B : Ty} (v : Var Γ B) →
-  W₁Tm A (V v) ≡ V (Sv v)
+  W₁Tm A (V v) ≡ V (𝑠𝑣 v)
 W₁V {Γ} {A} v =
   V v [ varify (W₁Ren A (idRen Γ)) ]
     ≡⟨ Vlem0 v (W₁Ren A (idRen Γ)) ⁻¹ ⟩
   V (v [ W₁Ren A (idRen Γ) ]R)
     ≡⟨ ap V (Wlem2Ren v (idRen Γ)) ⟩
-  V (Sv (v [ idRen Γ ]R))
-    ≡⟨ ap V (ap Sv ([id]Ren v)) ⟩
-  V (Sv v)
+  V (𝑠𝑣 (v [ idRen Γ ]R))
+    ≡⟨ ap V (ap 𝑠𝑣 ([id]Ren v)) ⟩
+  V (𝑠𝑣 v)
     ∎
 
 Vlem1 : {Γ Δ Σ : Ctx} (σ : Ren Δ Σ) (τ : Ren Γ Δ) →
@@ -109,7 +109,7 @@ Vlem2 (σ ⊕ v) i = Vlem2 σ i ⊕ W₁V v (~ i)
 
 Vlem3 : {Γ : Ctx} {A : Ty} → W₂Tms A (idTms Γ) ≡ idTms (Γ ⊹ A)
 Vlem3 {∅} = refl
-Vlem3 {Γ ⊹ B} {A} i = Vlem2 (W₁Ren B (idRen Γ)) (~ i) ⊕ W₁V Zv i ⊕ V Zv
+Vlem3 {Γ ⊹ B} {A} i = Vlem2 (W₁Ren B (idRen Γ)) (~ i) ⊕ W₁V 𝑧𝑣 i ⊕ V 𝑧𝑣
 
 W₁Lam : {Γ : Ctx} {A B C : Ty} (t : Tm (Γ ⊹ B) C) →
   W₁Tm A (Lam t) ≡ Lam (t [ W₂Tms B (W₁Tms A (idTms Γ)) ])
@@ -134,13 +134,13 @@ private
   Wlem1Varify : {Γ Δ Σ : Ctx} {A : Ty} (σ : Ren Δ Σ) (τ : Tms Γ Δ) (t : Tm Γ A) →
     varify (W₁Ren A σ) ∘Tms (τ ⊕ t) ≡ (varify σ) ∘Tms τ
   Wlem1Varify ! τ t = refl
-  Wlem1Varify {A = A} (σ ⊕ v) τ t i = Wlem1Varify σ τ t i ⊕ Sv[] v τ t i
+  Wlem1Varify {A = A} (σ ⊕ v) τ t i = Wlem1Varify σ τ t i ⊕ 𝑠𝑣[] v τ t i
 
 ∘TmsIdL : {Γ Δ : Ctx} (σ : Tms Γ Δ) → idTms Δ ∘Tms σ ≡ σ
 ∘TmsIdL ! = refl
 ∘TmsIdL {Γ} {Δ ⊹ B} (σ ⊕ t) =
-  varify (W₁Ren B (idRen Δ)) ∘Tms (σ ⊕ t) ⊕ V Zv [ σ ⊕ t ]
-    ≡⟨ (λ i →  Wlem1Varify (idRen Δ) σ t i ⊕ Zv[] σ t i) ⟩
+  varify (W₁Ren B (idRen Δ)) ∘Tms (σ ⊕ t) ⊕ V 𝑧𝑣 [ σ ⊕ t ]
+    ≡⟨ (λ i →  Wlem1Varify (idRen Δ) σ t i ⊕ 𝑧𝑣[] σ t i) ⟩
   idTms Δ ∘Tms σ ⊕ t
     ≡⟨ ap (_⊕ t) (∘TmsIdL σ) ⟩
   σ ⊕ t
@@ -156,10 +156,10 @@ private
 ∘TmsIdR (σ ⊕ t) i = ∘TmsIdR σ i ⊕ [id] t i
 
 [id]Var : {Γ : Ctx} {A : Ty} (v : Var Γ A) → V v [ idTms Γ ] ≡ V v
-[id]Var {Γ ⊹ B} {A} Zv = Zv[] (varify (W₁Ren A (idRen Γ))) (V Zv)
-[id]Var {Γ ⊹ B} {A} (Sv v) =
-  V (Sv v) [ varify (W₁Ren B (idRen Γ)) ⊕ V Zv ]
-    ≡⟨ Sv[] v (varify (W₁Ren B (idRen Γ))) (V Zv) ⟩
+[id]Var {Γ ⊹ B} {A} 𝑧𝑣 = 𝑧𝑣[] (varify (W₁Ren A (idRen Γ))) (V 𝑧𝑣)
+[id]Var {Γ ⊹ B} {A} (𝑠𝑣 v) =
+  V (𝑠𝑣 v) [ varify (W₁Ren B (idRen Γ)) ⊕ V 𝑧𝑣 ]
+    ≡⟨ 𝑠𝑣[] v (varify (W₁Ren B (idRen Γ))) (V 𝑧𝑣) ⟩
   V v [ varify (W₁Ren B (idRen Γ)) ]
     ≡⟨ ap (V v [_]) (Vlem2 (idRen Γ)) ⟩
   V v [ W₁Tms B (varify (idRen Γ)) ]
@@ -168,7 +168,7 @@ private
     ≡⟨ ap (W₁Tm B) ([id]Var v) ⟩
   W₁Tm B (V v)
     ≡⟨ W₁V v ⟩
-  V (Sv v)
+  V (𝑠𝑣 v)
     ∎
 
 [id] (V v) = [id]Var v
@@ -205,21 +205,21 @@ private
 [id] {Γ} {A ⇒ B} (η t i) j =
   isSet→SquareP (λ i j → trunc)
     ([id] t)
-    ([id] (Lam (App (t [ W₁Tms A (idTms Γ) ]) (V Zv))))
+    ([id] (Lam (App (t [ W₁Tms A (idTms Γ) ]) (V 𝑧𝑣))))
     (λ k → η t k [ idTms Γ ])
     (η t) i j
-[id] {Γ} (Zv[] σ t i) j =
+[id] {Γ} (𝑧𝑣[] σ t i) j =
   isSet→SquareP (λ i j → trunc)
-    ([id] (V Zv [ σ ⊕ t ]))
+    ([id] (V 𝑧𝑣 [ σ ⊕ t ]))
     ([id] t)
-    (λ k → Zv[] σ t k [ idTms Γ ])
-    (Zv[] σ t) i j
-[id] {Γ} (Sv[] v σ t i) j =
+    (λ k → 𝑧𝑣[] σ t k [ idTms Γ ])
+    (𝑧𝑣[] σ t) i j
+[id] {Γ} (𝑠𝑣[] v σ t i) j =
   isSet→SquareP (λ i j → trunc)
-    ([id] (V (Sv v) [ σ ⊕ t ]))
+    ([id] (V (𝑠𝑣 v) [ σ ⊕ t ]))
     ([id] (V v [ σ ]))
-    (λ k → Sv[] v σ t k [ idTms Γ ])
-    (Sv[] v σ t) i j
+    (λ k → 𝑠𝑣[] v σ t k [ idTms Γ ])
+    (𝑠𝑣[] v σ t) i j
 [id] {Γ} {A ⇒ B} (Lam[] t σ i) j =
   isSet→SquareP (λ i j → trunc)
     ([id] (Lam t [ σ ]))
@@ -261,8 +261,8 @@ Wlem1 (σ ⊕ s) τ t i = Wlem1 σ τ t i ⊕ Wlem0 s τ t i
 Wlem0 {A = A} (V v) σ s =
   W₁Tm A (V v) [ σ ⊕ s ]
     ≡⟨ ap _[ σ ⊕ s ] (W₁V v) ⟩
-  V (Sv v) [ σ ⊕ s ]
-    ≡⟨ Sv[] v σ s ⟩
+  V (𝑠𝑣 v) [ σ ⊕ s ]
+    ≡⟨ 𝑠𝑣[] v σ s ⟩
   V v [ σ ]
     ∎
 Wlem0 {A = A} (Lam {Δ} {B} {C} t) σ s =
@@ -270,16 +270,16 @@ Wlem0 {A = A} (Lam {Δ} {B} {C} t) σ s =
     ≡⟨ ap _[ σ ⊕ s ] (W₁Lam t) ⟩
   Lam (t [ W₂Tms B (W₁Tms A (idTms Δ)) ]) [ σ ⊕ s ]
     ≡⟨ (λ i → Lam[] (t [ W₂Tms B (Vlem2 (idRen Δ) (~ i)) ]) (σ ⊕ s) i) ⟩
-  Lam (t [ W₁Tms B (varify (W₁Ren A (idRen Δ))) ⊕ V Zv ] [ W₂Tms B (σ ⊕ s) ])
-    ≡⟨ (λ i → Lam ([][] t (Vlem2 (W₁Ren A (idRen Δ)) (~ i) ⊕ V Zv) (W₂Tms B (σ ⊕ s)) i)) ⟩
-  Lam (t [ varify (W₁Ren B (W₁Ren A (idRen Δ))) ∘Tms (W₁Tms B (σ ⊕ s) ⊕ V Zv)
-    ⊕ V Zv [ W₁Tms B (σ ⊕ s) ⊕ V Zv ] ])
-    ≡⟨ (λ i → Lam (t [ Wlem1Varify (W₁Ren A (idRen Δ)) (W₁Tms B (σ ⊕ s)) (V Zv) i
-      ⊕ Zv[] (W₁Tms B (σ ⊕ s)) (V Zv) i ])) ⟩
-  Lam (t [ varify (W₁Ren A (idRen Δ)) ∘Tms (W₁Tms B σ ⊕ W₁Tm B s) ⊕ V Zv ])
-    ≡⟨ (λ i → Lam (t [ Wlem1Varify (idRen Δ) (W₁Tms B σ) (W₁Tm B s) i ⊕ V Zv ])) ⟩
-  Lam (t [ idTms Δ ∘Tms W₁Tms B σ ⊕ V Zv ])
-    ≡⟨ (λ i → Lam (t [ ∘TmsIdL (W₁Tms B σ) i ⊕ V Zv ])) ⟩
+  Lam (t [ W₁Tms B (varify (W₁Ren A (idRen Δ))) ⊕ V 𝑧𝑣 ] [ W₂Tms B (σ ⊕ s) ])
+    ≡⟨ (λ i → Lam ([][] t (Vlem2 (W₁Ren A (idRen Δ)) (~ i) ⊕ V 𝑧𝑣) (W₂Tms B (σ ⊕ s)) i)) ⟩
+  Lam (t [ varify (W₁Ren B (W₁Ren A (idRen Δ))) ∘Tms (W₁Tms B (σ ⊕ s) ⊕ V 𝑧𝑣)
+    ⊕ V 𝑧𝑣 [ W₁Tms B (σ ⊕ s) ⊕ V 𝑧𝑣 ] ])
+    ≡⟨ (λ i → Lam (t [ Wlem1Varify (W₁Ren A (idRen Δ)) (W₁Tms B (σ ⊕ s)) (V 𝑧𝑣) i
+      ⊕ 𝑧𝑣[] (W₁Tms B (σ ⊕ s)) (V 𝑧𝑣) i ])) ⟩
+  Lam (t [ varify (W₁Ren A (idRen Δ)) ∘Tms (W₁Tms B σ ⊕ W₁Tm B s) ⊕ V 𝑧𝑣 ])
+    ≡⟨ (λ i → Lam (t [ Wlem1Varify (idRen Δ) (W₁Tms B σ) (W₁Tm B s) i ⊕ V 𝑧𝑣 ])) ⟩
+  Lam (t [ idTms Δ ∘Tms W₁Tms B σ ⊕ V 𝑧𝑣 ])
+    ≡⟨ (λ i → Lam (t [ ∘TmsIdL (W₁Tms B σ) i ⊕ V 𝑧𝑣 ])) ⟩
   Lam (t [ W₂Tms B σ ])
     ≡⟨ Lam[] t σ ⁻¹ ⟩
   Lam t [ σ ]
@@ -316,21 +316,21 @@ Wlem0 {Γ} {Δ} {A} (β t₁ t₂ i) σ s j =
 Wlem0 {A = A} (η {Δ} {C} t i) σ s j =
   isSet→SquareP (λ i j → trunc)
     (Wlem0 t σ s)
-    (Wlem0 (Lam (App (t [ W₁Tms C (idTms Δ) ]) (V Zv))) σ s)
+    (Wlem0 (Lam (App (t [ W₁Tms C (idTms Δ) ]) (V 𝑧𝑣))) σ s)
     (λ k → W₁Tm A (η t k) [ σ ⊕ s ])
     (λ k → η t k [ σ ]) i j
-Wlem0 {Γ} {Δ} {A = A} (Zv[] τ t i) σ s j =
+Wlem0 {Γ} {Δ} {A = A} (𝑧𝑣[] τ t i) σ s j =
   isSet→SquareP (λ i j → trunc)
-    (Wlem0 (V Zv [ τ ⊕ t ]) σ s)
+    (Wlem0 (V 𝑧𝑣 [ τ ⊕ t ]) σ s)
     (Wlem0 t σ s)
-    (λ k → W₁Tm A (Zv[] τ t k) [ σ ⊕ s ])
-    (λ k → Zv[] τ t k [ σ ]) i j
-Wlem0 {A = A} (Sv[] v τ t i) σ s j =
+    (λ k → W₁Tm A (𝑧𝑣[] τ t k) [ σ ⊕ s ])
+    (λ k → 𝑧𝑣[] τ t k [ σ ]) i j
+Wlem0 {A = A} (𝑠𝑣[] v τ t i) σ s j =
   isSet→SquareP (λ i j → trunc)
-    (Wlem0 (V (Sv v) [ τ ⊕ t ]) σ s)
+    (Wlem0 (V (𝑠𝑣 v) [ τ ⊕ t ]) σ s)
     (Wlem0 (V v [ τ ]) σ s)
-    (λ k → W₁Tm A (Sv[] v τ t k) [ σ ⊕ s ])
-    (λ k → Sv[] v τ t k [ σ ]) i j
+    (λ k → W₁Tm A (𝑠𝑣[] v τ t k) [ σ ⊕ s ])
+    (λ k → 𝑠𝑣[] v τ t k [ σ ]) i j
 Wlem0 {A = A} (Lam[] {Δ} {C} {D} t τ i) σ s j =
   isSet→SquareP (λ i j → trunc)
     (Wlem0 (Lam t [ τ ]) σ s)
@@ -403,7 +403,6 @@ module _ where
   open Contextual (𝒫𝒮𝒽 REN)
   open Functor
   open NatTrans
-  open PShFam
   
   𝒯ℳ : (A : Ty) → ob (PSh SYN)
   F-ob (𝒯ℳ A) Γ = Tm Γ A , trunc
@@ -448,7 +447,7 @@ module _ where
       ∎) i
 
   TMSよ : {Γ Δ : Ctx} → Tms Γ Δ → tms (TMS Γ) (TMS Δ)
-  TMSよ {Γ} {Δ} = mapIL₁ TMよ
+  TMSよ {Γ} {Δ} = map𝑇𝑚𝑠₁ TMよ
 
   ⇓TMSよOb : {Γ Δ Σ : Ctx} (σ : Tms Γ Δ) (MS : fst (F-ob (⇓PSh (TMS Γ)) Σ)) →
     ⇓TMS {Σ} {Δ} (N-ob (⇓PShMor (TMSよ σ)) Σ MS) ≡ σ ∘Tms (⇓TMS {Σ} {Γ} MS)

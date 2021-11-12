@@ -33,14 +33,9 @@ record Cartesian {ℓ₁ ℓ₂} (𝒞 : Precategory ℓ₁ ℓ₂) : Type (ℓ�
     C-Λ : (A B C : ob) → Hom[ C-× A B , C ] → Hom[ A , C-⇒ B C ]
     C-App : (A B C : ob) → Hom[ A , C-⇒ B C ] → Hom[ A , B ] → Hom[ A , C ]
 
-  {-eval : (A B : ob) → Hom[ C-× (C-⇒ A B) A , B ]
-  eval A B = C-App (C-× (C-⇒ A B) A) A B (C-π₁ (C-⇒ A B) A) (C-π₂ (C-⇒ A B) A)-}
-
   field
     C-Λnat : (A A' B C : ob) (f : Hom[ A , A' ]) (g : Hom[ C-× A' B , C ]) →
       C-Λ A B C (g ⊚ C-pair (f ⊚ C-π₁ A B) (C-π₂ A B)) ≡ (C-Λ A' B C g) ⊚ f
-    {-C-Λnat₂ : (A B C C' : ob) (f : Hom[ C , C' ]) (g : Hom[ C-× A B , C ]) →
-      C-Λ A B C' (f ⊚ g) ≡ C-Λ (C-⇒ B C) B C' (f ⊚ eval B C) ⊚ C-Λ A B C g-}
     C-Appβ : (A B C : ob) (f : Hom[ C-× A B , C ]) (g : Hom[ A , B ]) →
       C-App A B C (C-Λ A B C f) g ≡ f ⊚ (C-pair (𝒾𝒹 A) g)
     C-Appη : (A B C : ob) (f : Hom[ A , C-⇒ B C ]) →
@@ -71,7 +66,7 @@ module CartToCCC {ℓ₁ ℓ₂} (𝒞 : Precategory ℓ₁ ℓ₂)
     open Cartesian C-cart
     
     Ty = ob
-    Ctx = RL Ty
+    Ctx = 𝐶𝑡𝑥 Ty
 
     ⇓Ctx : Ctx → ob
     ⇓Ctx ∅ = C-1
@@ -80,7 +75,7 @@ module CartToCCC {ℓ₁ ℓ₂} (𝒞 : Precategory ℓ₁ ℓ₂)
     Tm : Ctx → Ty → Type ℓ₂
     Tm Γ A = Hom[ ⇓Ctx Γ , A ]
 
-    Tms = IL Tm
+    Tms = 𝑇𝑚𝑠 Tm
 
     ⇓Tms : {Γ Δ : Ctx} → Tms Γ Δ → Hom[ ⇓Ctx Γ , ⇓Ctx Δ ]
     ⇓Tms ! = C-!
@@ -92,7 +87,7 @@ module CartToCCC {ℓ₁ ℓ₂} (𝒞 : Precategory ℓ₁ ℓ₂)
 
     infixl 20 _∘Tms_
     _∘Tms_ : {Γ Δ Σ : Ctx} → Tms Δ Σ → Tms Γ Δ → Tms Γ Σ
-    σ ∘Tms τ = mapIL _[ τ ] σ
+    σ ∘Tms τ = map𝑇𝑚𝑠 _[ τ ] σ
 
     ⇓∘Tms : {Γ Δ Σ : Ctx} (σ : Tms Δ Σ) (τ : Tms Γ Δ) →
       ⇓Tms (σ ∘Tms τ) ≡ ⇓Tms σ 𝒞∘ ⇓Tms τ
@@ -109,13 +104,13 @@ module CartToCCC {ℓ₁ ℓ₂} (𝒞 : Precategory ℓ₁ ℓ₂)
     W₁Tm Γ A t = t 𝒞∘ C-π₁ (⇓Ctx Γ) A
 
     W₁Tms : (Γ : Ctx) {Δ : Ctx} (A : Ty) → Tms Γ Δ → Tms (Γ ⊹ A) Δ
-    W₁Tms Γ A σ = mapIL (W₁Tm Γ A) σ
+    W₁Tms Γ A σ = map𝑇𝑚𝑠 (W₁Tm Γ A) σ
 
     W₁Lem1 : {Γ Δ : Ctx} {A : Ty} (σ : Tms Γ Δ) →
       ⇓Tms (W₁Tms Γ A σ) ≡ ⇓Tms σ 𝒞∘ C-π₁ (⇓Ctx Γ) A
     W₁Lem1 {Γ} {Δ} {A} ! = C-!η (C-! 𝒞∘ C-π₁ (⇓Ctx Γ) A) ⁻¹
     W₁Lem1 {Γ} {Δ} {A} (σ ⊕ t) =
-      C-pair (⇓Tms (mapIL (W₁Tm Γ A) σ)) (W₁Tm Γ A t)
+      C-pair (⇓Tms (map𝑇𝑚𝑠 (W₁Tm Γ A) σ)) (W₁Tm Γ A t)
         ≡⟨ (λ i → C-pair (W₁Lem1 σ i) (W₁Tm Γ A t)) ⟩
       C-pair (⇓Tms σ 𝒞∘ C-π₁ (⇓Ctx Γ) A) (t 𝒞∘ C-π₁ (⇓Ctx Γ) A)
         ≡⟨ π∘ (⇓Tms σ) t (C-π₁ (⇓Ctx Γ) A) ⁻¹ ⟩
@@ -249,9 +244,6 @@ module CartToCCC {ℓ₁ ℓ₂} (𝒞 : Precategory ℓ₁ ℓ₂)
   ⇓∘tms = ⇓∘Tms
   ⇓idtms = ⇓idTms
 
-  {-W₁tm = W₁Tm
-  W₁tms = W₁Tms-}
-
   open Contextual
 
   ambCC : Contextual ℓ₁ ℓ₂
@@ -264,7 +256,6 @@ module CartToCCC {ℓ₁ ℓ₂} (𝒞 : Precategory ℓ₁ ℓ₂)
   ⟦⟧⟦⟧ ambCC = [][]
   Contextual.isSetTm ambCC = isSetHom C-cat
 
-  --open Contextual ambCC
   private
     module C = Contextual ambCC
 
@@ -305,12 +296,11 @@ module CartToCCC {ℓ₁ ℓ₂} (𝒞 : Precategory ℓ₁ ℓ₂)
 
   open CCC
 
-  instance
-    ambCCC : CCC ambCC
-    _⇛_ ambCCC = C-⇒
-    Λ ambCCC {Γ} {A} {B} = C-Λ (⇓Ctx Γ) A B
-    𝑎𝑝𝑝 ambCCC {Γ} {A} {B} = C-App (⇓Ctx Γ) A B
-    Λnat ambCCC {Γ} {Δ} {A} {B} t σ = ΛnatTm t σ
-    𝑎𝑝𝑝β ambCCC {Γ} = 𝑎𝑝𝑝βTm {Γ}
-    𝑎𝑝𝑝η ambCCC {Γ} = 𝑎𝑝𝑝ηTm {Γ}
+  ambCCC : CCC ambCC
+  _⇛_ ambCCC = C-⇒
+  Λ ambCCC {Γ} {A} {B} = C-Λ (⇓Ctx Γ) A B
+  𝑎𝑝𝑝 ambCCC {Γ} {A} {B} = C-App (⇓Ctx Γ) A B
+  Λnat ambCCC {Γ} {Δ} {A} {B} t σ = ΛnatTm t σ
+  𝑎𝑝𝑝β ambCCC {Γ} = 𝑎𝑝𝑝βTm {Γ}
+  𝑎𝑝𝑝η ambCCC {Γ} = 𝑎𝑝𝑝ηTm {Γ}
 

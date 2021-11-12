@@ -33,9 +33,9 @@ SVar : {Γ : Ctx} {A B : Ty} (n : ℕ) → Var Γ A → Var (insertCtx Γ B n) A
 SNe : {Γ : Ctx} {A B : Ty} (n : ℕ) → Ne Γ A → Ne (insertCtx Γ B n) A
 SNf : {Γ : Ctx} {A B : Ty} (n : ℕ) → Nf Γ A → Nf (insertCtx Γ B n) A
 
-SVar Z v = Sv v
-SVar (S n) Zv = Zv
-SVar (S n) (Sv v) = Sv (SVar n v)
+SVar Z v = 𝑠𝑣 v
+SVar (S n) 𝑧𝑣 = 𝑧𝑣
+SVar (S n) (𝑠𝑣 v) = 𝑠𝑣 (SVar n v)
 
 SNe n (VN v) = VN (SVar n v)
 SNe n (APP M N) = APP (SNe n M) (SNf n N)
@@ -58,13 +58,13 @@ LAM {A = A} N [ σ ]NF = LAM (N [ W₂Ren A σ ]NF)
 [id]NF : {Γ : Ctx} {A : Ty} → (N : Nf Γ A) →
   N [ idRen Γ ]NF ≡ N
 
-[id]NE (VN Zv) = refl
-[id]NE (VN (Sv v)) =
+[id]NE (VN 𝑧𝑣) = refl
+[id]NE (VN (𝑠𝑣 v)) =
   VN (v [ W₁Ren _ (idRen _) ]R)
     ≡⟨ ap VN (Wlem2Ren v (idRen _)) ⟩
-  VN (Sv (v [ idRen _ ]R))
-    ≡⟨ ap VN (ap Sv ([id]Ren v)) ⟩
-  VN (Sv v)
+  VN (𝑠𝑣 (v [ idRen _ ]R))
+    ≡⟨ ap VN (ap 𝑠𝑣 ([id]Ren v)) ⟩
+  VN (𝑠𝑣 v)
     ∎
 [id]NE (APP M N) i = APP ([id]NE M i) ([id]NF N i)
 
@@ -137,8 +137,8 @@ module _ where
 ιNfLem (LAM {Γ} {A} N) σ =
   Lam (ιNf (N [ W₂Ren A σ ]NF))
     ≡⟨ ap Lam (ιNfLem N (W₂Ren A σ)) ⟩
-  Lam (ιNf N [ varify (W₁Ren A σ) ⊕ V Zv ])
-    ≡⟨ (λ i → Lam (ιNf N [ Vlem2 σ i ⊕ V Zv ])) ⟩
+  Lam (ιNf N [ varify (W₁Ren A σ) ⊕ V 𝑧𝑣 ])
+    ≡⟨ (λ i → Lam (ιNf N [ Vlem2 σ i ⊕ V 𝑧𝑣 ])) ⟩
   Lam (ιNf N [ W₂Tms A (varify σ) ])
     ≡⟨ Lam[] (ιNf N) (varify σ) ⁻¹ ⟩
   Lam (ιNf N) [ varify σ ]
@@ -159,8 +159,6 @@ module _ where
   ιNF : (A : Ty) → Hom[ NF A , TM A ]
   N-ob (ιNF A) Γ = ιNf
   N-hom (ιNF A) σ i N = ιNfLem N σ i
-
-  open PShFam
 
   NES = plurify NE
   NFS = plurify NF

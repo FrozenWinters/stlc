@@ -24,27 +24,31 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
   interpTy (A ⇒ B) = (interpTy A) ⇛ (interpTy B)
   
   interpCtx : Ctx → ctx
-  interpCtx Γ = mapRL interpTy Γ
+  interpCtx Γ = map𝐶𝑡𝑥 interpTy Γ
+
+  trVar = tr𝑉𝑎𝑟 interpTy
 
   interpVar : {Γ : Ctx} {A : Ty} (v : Var Γ A) → tm (interpCtx Γ) (interpTy A)
-  interpVar Zv = 𝑧
-  interpVar (Sv v) = interpVar v ⟦ π ⟧
+  interpVar v = makeVar (tr𝑉𝑎𝑟 interpTy v)
 
   interpRen : {Γ Δ : Ctx} (σ : Ren Γ Δ) → tms (interpCtx Γ) (interpCtx Δ)
-  interpRen = mapIL₁ interpVar
+  interpRen = map𝑇𝑚𝑠₁ interpVar
+
+  interpIdRen : {Γ : Ctx} → interpRen (idRen Γ) ≡ 𝒾𝒹 (interpCtx Γ)
+  interpIdRen {Γ} =
+    map𝑇𝑚𝑠₁ (λ v → makeVar (tr𝑉𝑎𝑟 interpTy v)) (idRen Γ)
+      ≡⟨ map𝑇𝑚𝑠comp₂ makeVar (tr𝑉𝑎𝑟 interpTy) (idRen Γ) ⁻¹ ⟩
+    makeRen (tr𝑅𝑒𝑛 interpTy (idRen Γ))
+      ≡⟨ (λ i → makeRen (trId interpTy Γ i)) ⟩
+    makeRen (id𝑅𝑒𝑛 (map𝐶𝑡𝑥 interpTy Γ))
+      ≡⟨ 𝒾𝒹η₂ ⟩
+    𝒾𝒹 (map𝐶𝑡𝑥 interpTy Γ)
+      ∎
 
   interpW₁Ren : {Γ Δ : Ctx} {A : Ty} (σ : Ren Γ Δ) →
     interpRen (W₁Ren A σ) ≡ interpRen σ ⊚ π
-  interpW₁Ren ! = !η (! ⊚ π)
-  interpW₁Ren {A = A} (σ ⊕ v) =
-    interpRen (W₁Ren A σ) ⊕ interpVar v ⟦ π ⟧
-      ≡⟨ ap (_⊕ interpVar v ⟦ π ⟧) (interpW₁Ren σ)  ⟩
-    interpRen σ ⊚ π ⊕ interpVar v ⟦ π ⟧
-      ≡⟨ ⊕⊚ (interpRen σ) (interpVar v) π ⁻¹ ⟩
-    interpRen (σ ⊕ v) ⊚ π
-      ∎
-
-  interpIdRen : {Γ : Ctx} → interpRen (idRen Γ) ≡ 𝒾𝒹 (interpCtx Γ)
+  interpW₁Ren ! = refl
+  interpW₁Ren {Γ} {Δ} {A} (σ ⊕ v) i = interpW₁Ren {A = A} σ i ⊕ make𝑠𝑣 (tr𝑉𝑎𝑟 interpTy v) i
 
   πlem : {Γ : Ctx} {A : Ty} → interpRen (W₁Ren A (idRen Γ)) ≡ π
   πlem {Γ} {A} =
@@ -57,20 +61,11 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
     π
       ∎
 
-  interpIdRen {∅} = !η (𝒾𝒹 ∅)
-  interpIdRen {Γ ⊹ A} =
-    interpRen (W₁Ren A (idRen Γ)) ⊕ 𝑧
-      ≡⟨ ap (_⊕ 𝑧) πlem ⟩
-    π ⊕ 𝑧
-      ≡⟨ 𝒾𝒹η ⟩
-    𝒾𝒹 (interpCtx (Γ ⊹ A))
-      ∎
-
   interpTm  : {Γ : Ctx} {A : Ty} (t : Tm Γ A) → tm (interpCtx Γ) (interpTy A)
 
   {-# TERMINATING #-}
   interpTms : {Γ Δ : Ctx} (σ : Tms Γ Δ) → tms  (interpCtx Γ)  (interpCtx Δ)
-  interpTms = mapIL₁ interpTm
+  interpTms = map𝑇𝑚𝑠₁ interpTm
 
   interpVarify : {Γ Δ : Ctx} (σ : Ren Γ Δ) →
     interpTms (varify σ) ≡ interpRen σ
@@ -121,7 +116,7 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
     𝑎𝑝𝑝 (interpTm t) (interpTm s)
   interpTm (t [ σ ]) =
     interpTm t ⟦ interpTms σ ⟧
-    
+
   interpTm (β {Γ} t s i) =
     (𝑎𝑝𝑝 (Λ (interpTm t)) (interpTm s)
       ≡⟨ 𝑎𝑝𝑝β (interpTm t) (interpTm s) ⟩
@@ -136,15 +131,10 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
       ≡⟨ (λ i → Λ (𝑎𝑝𝑝 (interpTm t ⟦ πlemTms {A = A} i ⟧) 𝑧)) ⟩
     Λ (𝑎𝑝𝑝 (interpTm t ⟦ interpTms (W₁Tms A (idTms Γ)) ⟧) 𝑧)
       ∎) i
-  interpTm (Zv[] σ t i) =
+  interpTm (𝑧𝑣[] σ t i) =
     𝑧β (interpTms (σ ⊕ t)) i
-  interpTm (Sv[] v σ t i) =
-    (interpVar v ⟦ π ⟧ ⟦ interpTms (σ ⊕ t) ⟧
-      ≡⟨ ⟦⟧⟦⟧ (interpVar v) π (interpTms (σ ⊕ t)) ⟩
-    interpVar v ⟦ π ⊚ (interpTms σ ⊕ interpTm t) ⟧
-      ≡⟨ ap (interpVar v ⟦_⟧) (πβ (interpTms (σ ⊕ t))) ⟩
-    interpVar v ⟦ interpTms σ ⟧
-      ∎) i
+  interpTm (𝑠𝑣[] v σ t i) =
+    W₁⟦⟧ (tr𝑉𝑎𝑟 interpTy v) (interpTms σ) (interpTm t) i
   interpTm (Lam[] {A = A} t σ i) =
     (Λ (interpTm t) ⟦ interpTms σ ⟧
       ≡⟨ Λnat (interpTm t) (interpTms σ) ⟩
