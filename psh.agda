@@ -3,8 +3,8 @@
 module psh where
 
 open import contextual
-open import cartesian2
-open import cartesian3
+open import ccc
+open import cart
 
 open import Cubical.Data.Sigma
 open import Cubical.Categories.Category
@@ -276,21 +276,19 @@ module _ {ℓ : Level} (𝒞 : Precategory ℓ ℓ) ⦃ C-cat : isCategory 𝒞 
    𝒫𝒮𝒽 = ambCC
    𝒫𝒮𝒽CCC = ambCCC
 
-open import ren2
+open import ren
 
--- Unification times blow up if this module gets paramterised!
 module _ where
-  private
-    module C = Contextual ρεν
-
   open Contextual (𝒫𝒮𝒽 REN)
   open Precategory (PSh REN) hiding (_∘_)
-  open CartToCCC (PSh REN) ⦃ PShCat ⦄ ⦃ PShCart ⦄
+  open CartToCCC (PSh REN)
   open CCC (𝒫𝒮𝒽CCC REN)
 
   private
-    infixr 20 _𝒩∘_
-    _𝒩∘_ = comp' (PSh REN ⦃ C.isCatAmbCat ⦄)
+    module C = Contextual ρεν
+    
+  infixr 20 _𝒩∘_
+  _𝒩∘_ = comp' (PSh REN ⦃ C.isCatAmbCat ⦄)
 
   PresheafFamily = C.ty → ob
   PresheavesFamily = C.ctx → ctx
@@ -339,24 +337,5 @@ module _ where
   ⇓∘PShMor = ⇓∘tms
   ⇓πPSh = ⇓π
   ⇓idPSh = ⇓idtms
-
-  {-W₁PSh = W₁tm
-  W₁PShs = W₁tms-}
-
-  {-πηPSh : {Γ : ctx} {A B : ty} →
-    π {Γ ⊹ B} {A} ≡ W₁PShs (Γ ⊹ B) A π ⊕ (W₁PSh (Γ ⊹ B) A (𝑧 {Γ}))
-  πηPSh {Γ} {A} {B} = ap (W₁PShs (Γ ⊹ B) A) (𝒾𝒹η ⁻¹)-}
-
-  --πηPSh = πη
-    
-
-  {-data MorLst (𝒫 𝒬 : PresheafFamily) : (C.ctx) → Type ℓ where
-    !! : MorLst 𝒫 𝒬 ∅
-    _⊗_ : {Γ : C.ctx} {A : C.ty} → MorLst 𝒫 𝒬 Γ → Hom[ 𝒫 A , 𝒬 A ] → MorLst 𝒫 𝒬 (Γ ⊹ A)
-
-  ⇓MorLst : {𝒫 𝒬 : PresheafFamily} {Γ : C.ctx} → MorLst 𝒫 𝒬 Γ →
-    tms (plurify 𝒫 Γ) (plurify 𝒬 Γ)
-  ⇓MorLst !! = !
-  ⇓MorLst (αs ⊗ α) = ⇓MorLst αs ×tm α-}
 
   

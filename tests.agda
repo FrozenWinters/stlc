@@ -2,11 +2,11 @@
 
 module tests where
 
-open import ren2
-open import syn3
+open import ren
+open import syn
 open import normal
 open import norm
-open import twglue
+open import twgl
 
 open import Cubical.Data.Nat renaming (zero to Z; suc to S)
 

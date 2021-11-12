@@ -1,6 +1,6 @@
 {-# OPTIONS --cubical #-}
 
-module cartesian2 where
+module ccc where
 
 open import contextual
 

@@ -2,11 +2,11 @@
 
 module normal where
 
-open import ren2
-open import syn3
+open import ren
+open import syn
 open import psh
 open import contextual
-open import cartesian3
+open import cart
 
 open import Cubical.Data.Nat renaming (zero to Z; suc to S) hiding (elim)
 open import Cubical.Categories.Category

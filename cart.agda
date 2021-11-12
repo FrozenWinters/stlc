@@ -1,9 +1,9 @@
 {-# OPTIONS --cubical #-}
 
-module cartesian3 where
+module cart where
 
 open import contextual
-open import cartesian2
+open import ccc
 
 open import Cubical.Categories.Category
 
@@ -291,8 +291,6 @@ module CartToCCC {ℓ₁ ℓ₂} (𝒞 : Precategory ℓ₁ ℓ₂)
       ≡⟨ C-πη (⇓Ctx (Γ ⊹ B ⊹ A)) (⇓Ctx Γ) B (C-π₁ (C-× (⇓Ctx Γ) B) A) ⟩
     C-π₁ (C-× (⇓Ctx Γ) B) A
       ∎
-
---⇓π {Γ} {B}
 
   open CCC
 

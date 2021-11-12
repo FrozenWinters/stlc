@@ -2,13 +2,13 @@
 
 module norm where
 
-open import ren2
-open import syn3
+open import ren
+open import syn
 open import normal
-open import cartesian2
-open import eliminator3
+open import ccc
+open import eliminator
 open import contextual
-open import twglue
+open import twgl
 open import twglccc
 open import psh
 
@@ -37,10 +37,6 @@ module _ where
   open Precategory (PSh REN) hiding (_∘_)
   open Functor
 
-  private
-    infixr 20 _𝒩∘_
-    _𝒩∘_ = comp' (PSh REN)
-
   base : (X : Char) → Glueing
   Gl-A (base X) = Base X
   Gl-⦇A⦈ (base X) = NF (Base X)
@@ -56,7 +52,7 @@ module _ where
 
   interpTyLem : (A : Ty) → Gl-A (interpTy A) ≡ A
   interpTyLem (Base X) = refl
-  interpTyLem (A ⇒ B) i = interpTyLem A i ren2.⇒ interpTyLem B i
+  interpTyLem (A ⇒ B) i = interpTyLem A i ren.⇒ interpTyLem B i
 
   interpCtxLem : (Γ : Ctx) → Gls-Γ (interpCtx Γ) ≡ Γ
   interpCtxLem ∅ = refl

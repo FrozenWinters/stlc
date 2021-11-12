@@ -2,11 +2,11 @@
 
 module twglccc where
 
-open import ren2
-open import syn3
-open import cartesian2
-open import cartesian3
-open import twglue
+open import ren
+open import syn
+open import ccc
+open import cart
+open import twgl
 open import normal
 open import psh
 open import contextual
@@ -28,12 +28,8 @@ module _ where
   module R = Contextual ρεν
   module G = Contextual TwGl
 
-  private
-    infixr 20 _𝒩∘_
-    _𝒩∘_ = comp' (PSh REN)
-
   A-A⇒B : (A B : Glueing) → Ty
-  A-A⇒B A B = Gl-A A ren2.⇒ Gl-A B
+  A-A⇒B A B = Gl-A A ren.⇒ Gl-A B
 
   q-A⇒B : (A B : Glueing) →
     Hom[ C-⇒ (Gl-⦇A⦈ A) (Gl-⦇A⦈ B) , NF (A-A⇒B A B) ]

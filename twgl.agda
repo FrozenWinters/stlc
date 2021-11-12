@@ -1,10 +1,10 @@
 {-# OPTIONS --cubical --allow-unsolved-metas #-}
 
-module twglue where
+module twgl where
 
 open import psh
-open import ren2
-open import syn3
+open import ren
+open import syn
 open import normal
 
 open import Cubical.Categories.Category
@@ -19,9 +19,6 @@ module _ where
   open Contextual (𝒫𝒮𝒽 REN)
 
   private
-    infixr 20 _𝒩∘_
-    _𝒩∘_ = comp' (PSh REN)
-
     module C = Contextual σιν
 
   record Glueing : Type (lsuc lzero) where
