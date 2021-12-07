@@ -6,6 +6,7 @@ open import lists public
 
 open import Cubical.Categories.Category
 open import Cubical.Categories.Functor
+open import Agda.Builtin.Char public
 
 private
   variable
@@ -14,7 +15,12 @@ private
 -- This new definition of a contextual category arose as a way to de-boilerplate the code;
 -- it is the most natural variation of the definition to use in an implementation.
 
-record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) where
+record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂))
+
+𝑎𝑚𝑏Cat : Contextual ℓ₁ ℓ₂ → Precategory ℓ₁ (ℓ₁ ⊔ ℓ₂)
+isCat𝐴𝑚𝑏Cat : (𝒞 : Contextual ℓ₁ ℓ₂) → isCategory (𝑎𝑚𝑏Cat 𝒞)
+
+record Contextual ℓ₁ ℓ₂ where
   field
     ty : Type ℓ₁
     
@@ -53,7 +59,7 @@ record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) wher
   private
     module P = 𝑇𝑚𝑠Path tm isSetTm
 
-  isSetTms = P.isSetTms
+  isSetTms = P.isSet𝑇𝑚𝑠
 
   -- Every contextual category has an ambient category of contexts and terms
 
@@ -110,6 +116,23 @@ record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) wher
   IntVar = 𝑉𝑎𝑟 ty
   IntRen = 𝑅𝑒𝑛 ty
 
+  ρεν : Contextual ℓ₁ ℓ₁
+  ty ρεν = ty
+  tm ρεν = IntVar
+  _⟦_⟧ ρεν = _[_]𝑅
+  𝒾𝒹 ρεν Γ = id𝑅𝑒𝑛 Γ
+  𝒾𝒹L ρεν = ∘𝑅𝑒𝑛IdL
+  𝒾𝒹⟦⟧ ρεν = [id]𝑅𝑒𝑛
+  ⟦⟧⟦⟧ ρεν = [][]𝑅𝑒𝑛
+  isSetTm ρεν = 𝑉𝑎𝑟Path.isSet𝑉𝑎𝑟
+
+  REN : Precategory ℓ₁ ℓ₁
+  REN = 𝑎𝑚𝑏Cat ρεν
+
+  instance
+    isCat𝑅𝑒𝑛 : isCategory REN
+    isCat𝑅𝑒𝑛 = isCat𝐴𝑚𝑏Cat ρεν
+
   derive : {Γ Δ : ctx} {A : ty} → tms Γ Δ → IntVar Δ A → tm Γ A
   derive σ 𝑧𝑣 = 𝑧𝑇𝑚𝑠 σ
   derive σ (𝑠𝑣 v) = derive (π𝑇𝑚𝑠 σ) v
@@ -163,12 +186,26 @@ record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) wher
     derive σ v
       ∎
 
-  make𝑠𝑣 : {Γ : ctx} {A B : ty} (v : IntVar Γ A) →
-    makeVar (𝑠𝑣 {B = B} v) ≡ makeVar v ⟦ π ⟧
-  make𝑠𝑣 {Γ} {A} {B} v = varβ v π ⁻¹
+  W₁tm : {Γ : ctx} (A : ty) {B : ty} → tm Γ B → tm (Γ ⊹ A) B
+  W₁tm A t = t ⟦ π ⟧
+
+  W₁tms : {Γ Δ : ctx} (A : ty) → tms Γ Δ → tms (Γ ⊹ A) Δ
+  W₁tms A σ = σ ⊚ π
+
+  W₂tms : {Γ Δ : ctx} (A : ty) → tms Γ Δ → tms (Γ ⊹ A) (Δ ⊹ A)
+  W₂tms A σ = W₁tms A σ ⊕ 𝑧
+
+  make𝑠𝑣 : {Γ : ctx} {A B : ty} (v : IntVar Γ B) →
+    makeVar (𝑠𝑣 v) ≡ W₁tm A (makeVar v)
+  make𝑠𝑣 v = varβ v π ⁻¹
+
+  makeW₁ : {Γ Δ : ctx} {A : ty} (σ : IntRen Γ Δ) →
+    makeRen (W₁𝑅𝑒𝑛 A σ) ≡ W₁tms A (makeRen σ)
+  makeW₁ ! = refl
+  makeW₁ (σ ⊕ v) i = makeW₁ σ i ⊕ make𝑠𝑣 v i
 
   deriveW₁ : {Γ Δ Σ : ctx} {A : ty} (σ : tms Γ Δ) (t : tm Γ A) (v : IntRen Δ Σ) →
-    deriveRen (σ ⊕ t) (W₁𝑅𝑒𝑛 v) ≡ deriveRen σ v
+    deriveRen (σ ⊕ t) (W₁𝑅𝑒𝑛 A v) ≡ deriveRen σ v
   deriveW₁ σ t ! = refl
   deriveW₁ σ t (τ ⊕ v) i = deriveW₁ σ t τ i ⊕ derive σ v
 
@@ -184,13 +221,29 @@ record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) wher
     makeVar v ⟦ σ ⟧
       ∎
 
+  make[]𝑅 : {Γ Δ : ctx} {A : ty} (v : IntVar Δ A) (σ : IntRen Γ Δ) →
+    makeVar (v [ σ ]𝑅) ≡ makeVar v ⟦ makeRen σ ⟧
+  make[]𝑅 𝑧𝑣 (σ ⊕ t) = 𝑧β (makeRen (σ ⊕ t)) ⁻¹
+  make[]𝑅 (𝑠𝑣 v) (σ ⊕ t) =
+    makeVar (v [ σ ]𝑅)
+      ≡⟨ make[]𝑅 v σ ⟩
+    makeVar v ⟦ makeRen σ ⟧
+      ≡⟨ W₁⟦⟧ v (makeRen σ) (makeVar t) ⁻¹ ⟩
+    makeVar (𝑠𝑣 v) ⟦ makeRen (σ ⊕ t) ⟧
+      ∎
+
+  make∘𝑅𝑒𝑛 : {Γ Δ Σ : ctx} (σ : IntRen Δ Σ) (τ : IntRen Γ Δ) →
+    makeRen (σ ∘𝑅𝑒𝑛 τ) ≡ makeRen σ ⊚ makeRen τ
+  make∘𝑅𝑒𝑛 ! τ = refl
+  make∘𝑅𝑒𝑛 (σ ⊕ v) τ i = make∘𝑅𝑒𝑛 σ τ i ⊕ make[]𝑅 v τ i
+
   -- Taking apart the variables and putting them back together does nothing
 
   derive𝒾𝒹 : {Γ Δ : ctx} (σ : tms Γ Δ) →
     deriveRen σ (id𝑅𝑒𝑛 Δ) ≡ σ
   derive𝒾𝒹 ! = refl
   derive𝒾𝒹 {Γ} {Δ ⊹ A} (σ ⊕ t) =
-    deriveRen (σ ⊕ t) (W₁𝑅𝑒𝑛 (id𝑅𝑒𝑛 Δ)) ⊕ t
+    deriveRen (σ ⊕ t) (W₁𝑅𝑒𝑛 A (id𝑅𝑒𝑛 Δ)) ⊕ t
       ≡⟨ ap (_⊕ t) (deriveW₁ σ t (id𝑅𝑒𝑛 Δ)) ⟩
     deriveRen σ (id𝑅𝑒𝑛 Δ) ⊕ t
       ≡⟨ ap (_⊕ t) (derive𝒾𝒹 σ) ⟩
@@ -199,6 +252,19 @@ record Contextual (ℓ₁ ℓ₂ : Level) : Type (lsuc (ℓ₁ ⊔ ℓ₂)) wher
 
   𝒾𝒹η₂ : {Γ : ctx} → makeRen (id𝑅𝑒𝑛 Γ) ≡ 𝒾𝒹 Γ
   𝒾𝒹η₂ {Γ} = derive𝒾𝒹 (𝒾𝒹 Γ)
+
+𝑎𝑚𝑏Cat 𝒞 = Contextual.ambCat 𝒞
+isCat𝐴𝑚𝑏Cat 𝒞 = Contextual.isCatAmbCat 𝒞
+
+module _ (𝒞 : Contextual ℓ₁ ℓ₂) where
+  open Contextual 𝒞
+  open Functor
+
+  ιREN : Functor REN ambCat
+  F-ob ιREN Γ = Γ
+  F-hom ιREN σ = makeRen σ
+  F-id ιREN = 𝒾𝒹η₂
+  F-seq ιREN σ τ = make∘𝑅𝑒𝑛 τ σ
 
 -- The idea is that a contextual functor preserves the contextual structure
 

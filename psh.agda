@@ -1,4 +1,4 @@
-{-# OPTIONS --cubical --allow-unsolved-metas #-}
+{-# OPTIONS --cubical #-}
 
 module psh where
 
@@ -7,11 +7,10 @@ open import ccc
 open import cart
 
 open import Cubical.Data.Sigma
+open import Cubical.Data.Unit as ⊤ renaming (Unit to ⊤)
 open import Cubical.Categories.Category
 open import Cubical.Categories.Functor
 open import Cubical.Categories.Instances.Sets hiding (isSetLift)
-open import Cubical.Data.Unit as ⊤ renaming (Unit to ⊤)
-open import Cubical.Data.Empty as ⊥
 
 -- In this file, we exhibit the Cartesian Closed structure of presheaves
 
@@ -269,73 +268,3 @@ module _ {ℓ : Level} {𝒞 : Precategory ℓ ℓ} ⦃ C-cat : isCategory 𝒞 
     PShCart .C-Λnat = ΛnatPSh
     PShCart .C-Appβ = AppβPSh
     PShCart .C-Appη F G H α = AppηPSh F G H α ⁻¹
-
-module _ {ℓ : Level} (𝒞 : Precategory ℓ ℓ) ⦃ C-cat : isCategory 𝒞 ⦄ where
-   open CartToCCC (PSh 𝒞)
-
-   𝒫𝒮𝒽 = ambCC
-   𝒫𝒮𝒽CCC = ambCCC
-
-open import ren
-
-module _ where
-  open Contextual (𝒫𝒮𝒽 REN)
-  open Precategory (PSh REN) hiding (_∘_)
-  open CartToCCC (PSh REN)
-  open CCC (𝒫𝒮𝒽CCC REN)
-
-  private
-    module C = Contextual ρεν
-    
-  infixr 20 _𝒩∘_
-  _𝒩∘_ = comp' (PSh REN ⦃ C.isCatAmbCat ⦄)
-
-  PresheafFamily = C.ty → ob
-  PresheavesFamily = C.ctx → ctx
-
-  plurify : PresheafFamily → PresheavesFamily
-  plurify 𝒫 = map𝐶𝑡𝑥 𝒫
-
-  TransFamily : (𝒫 𝒬 : PresheafFamily) → Type lzero
-  TransFamily 𝒫 𝒬 = (A : C.ty) → Hom[ 𝒫 A , 𝒬 A ]
-
-  infixl 30 _×tm_
-  _×tm_ : {Γ Δ : ctx} {A B : ty} → tms Γ Δ → Hom[ A , B ] → tms (Γ ⊹ A) (Δ ⊹ B)
-  _×tm_ {Γ} σ t = σ ⊚ π ⊕ (t 𝒩∘ (𝑧 {Γ}))
-  
-  weaveTrans : {𝒫 𝒬 : PresheafFamily} (𝒜 : TransFamily 𝒫 𝒬) →
-    (Γ : C.ctx) → tms (plurify 𝒫 Γ) (plurify 𝒬 Γ)
-  weaveTrans 𝒜 ∅ = !
-  weaveTrans 𝒜 (Γ ⊹ A) = weaveTrans 𝒜 Γ ×tm 𝒜 A
-
-  ×tmLem1 : {Γ Δ Σ : ctx} {A B : ty} (σ : tms Δ Σ) (t : Hom[ A , B ])
-    (τ : tms Γ Δ) (s : tm Γ A ) →
-    (σ ×tm t) ⊚ (τ ⊕ s) ≡ (σ ⊚ τ) ⊕ (t 𝒩∘ s)
-  ×tmLem1 {Γ} {Δ} σ t τ s =
-    σ ⊚ π ⊕ (t 𝒩∘ 𝑧 {Δ}) ⊚ (τ ⊕ s)
-      ≡⟨ ⊕⊚ (σ ⊚ π) (t 𝒩∘ 𝑧 {Δ}) (τ ⊕ s) ⟩
-    σ ⊚ π ⊚ (τ ⊕ s) ⊕ (t 𝒩∘ 𝑧 {Δ}) ⟦ τ ⊕ s ⟧
-      ≡⟨ (λ i → ⊚Assoc σ π (τ ⊕ s) i ⊕ ⊚πlem t τ s i) ⟩
-    σ ⊚ (π ⊚ (τ ⊕ s)) ⊕ (t 𝒩∘ s)
-      ≡⟨ (λ i → σ ⊚ (πβ (τ ⊕ s) i) ⊕ (t 𝒩∘ s)) ⟩
-    σ ⊚ τ ⊕ (t 𝒩∘ s)
-      ∎
-
-  ×tmLem2 : {Γ Δ Σ : ctx} {A B C : ty} (σ : tms Δ Σ) (t : Hom[ B , C ])
-    (τ : tms Γ Δ) (s : Hom[ A , B ]) →
-    (σ ×tm t) ⊚ (τ ×tm s) ≡ (σ ⊚ τ) ×tm (t 𝒩∘ s)
-  ×tmLem2 {Γ} {Δ} σ t τ s =
-    (σ ×tm t) ⊚ (τ ⊚ π ⊕ (s 𝒩∘ (𝑧 {Γ})))
-      ≡⟨ ×tmLem1 σ t (τ ⊚ π) (s 𝒩∘ (𝑧 {Γ})) ⟩
-    σ ⊚ (τ ⊚ π) ⊕ (t 𝒩∘ s 𝒩∘ (𝑧 {Γ}))
-      ≡⟨ (λ i → ⊚Assoc σ τ π (~ i) ⊕ ⋆Assoc (𝑧 {Γ}) s t i) ⟩
-    (σ ⊚ τ) ×tm (t 𝒩∘ s)
-      ∎
-
-  ⇓PSh = ⇓ctx
-  ⇓PShMor = ⇓tms
-  ⇓∘PShMor = ⇓∘tms
-  ⇓πPSh = ⇓π
-  ⇓idPSh = ⇓idtms
-
-  
