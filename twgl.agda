@@ -16,12 +16,11 @@ open import Cubical.Data.Unit as ⊤ renaming (Unit to ⊤)
 open import Cubical.Data.Nat renaming (zero to Z; suc to S) hiding (elim)
 
 module TwGlCC {ℓ} (𝒞 : Contextual ℓ ℓ) ⦃ 𝒞CCC : CCC 𝒞 ⦄ (base : Char → Contextual.ty 𝒞) where
-  open Presheaves 𝒞 base
+  open Presheaves 𝒞 ⦃ 𝒞CCC ⦄ base
   open Contextual 𝒫𝒮𝒽
   private
     module C = Contextual 𝒞
   open Precategory 𝑃𝑆ℎ hiding (_∘_)
-  open Enveloping 𝑃𝑆ℎ
 
   record Glueing : Type (lsuc ℓ) where
     constructor Gl
@@ -44,23 +43,23 @@ module TwGlCC {ℓ} (𝒞 : Contextual ℓ ℓ) ⦃ 𝒞CCC : CCC 𝒞 ⦄ (base
 
   Gls-u : (Γ : Glueings) → tms (NES (Gls-Γ Γ)) (Gls-⦇Γ⦈ Γ)
   Gls-u ∅ = !
-  Gls-u (Γ ⊹ A) = Gls-u Γ ×tm (Gl-u A)
+  Gls-u (Γ ⊹ A) = Gls-u Γ ×PSh (Gl-u A)
 
   Gls-q : (Γ : Glueings) → tms (Gls-⦇Γ⦈ Γ) (NFS (Gls-Γ Γ))
   Gls-q ∅ = !
-  Gls-q (Γ ⊹ A) = Gls-q Γ ×tm (Gl-q A)
+  Gls-q (Γ ⊹ A) = Gls-q Γ ×PSh (Gl-q A)
 
   Gls-comp : (Γ : Glueings) → ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ ⊚ Gls-u Γ ≡ ιNES (Gls-Γ Γ)
   Gls-comp ∅ = refl
   Gls-comp (Γ ⊹ A) =
     ιNFS (Gls-Γ (Γ ⊹ A)) ⊚ Gls-q (Γ ⊹ A) ⊚ Gls-u (Γ ⊹ A)
-      ≡⟨ (λ i → ×tmLem2 (ιNFS (Gls-Γ Γ)) (ιNF (Gl-A A)) (Gls-q Γ) (Gl-q A) i ⊚ Gls-u (Γ ⊹ A)) ⟩
-    ((ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ) ×tm (ιNF (Gl-A A) 𝒩∘ Gl-q A)) ⊚  Gls-u (Γ ⊹ A)
-      ≡⟨ ×tmLem2 (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ) (ιNF (Gl-A A) 𝒩∘ Gl-q A) (Gls-u Γ) (Gl-u A) ⟩
-    (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ ⊚ Gls-u Γ) ×tm ((ιNF (Gl-A A) 𝒩∘ Gl-q A) 𝒩∘ Gl-u A)
-      ≡⟨ (λ i → Gls-comp Γ i ×tm ⋆Assoc (Gl-u A) (Gl-q A) (ιNF (Gl-A A)) (~ i)) ⟩
-    ιNES (Gls-Γ Γ) ×tm (ιNF (Gl-A A) 𝒩∘ Gl-q A 𝒩∘ Gl-u A)
-      ≡⟨ (λ i → ιNES (Gls-Γ Γ) ×tm Gl-comp A i) ⟩
+      ≡⟨ (λ i → ×PShLem2 (ιNFS (Gls-Γ Γ)) (ιNF (Gl-A A)) (Gls-q Γ) (Gl-q A) i ⊚ Gls-u (Γ ⊹ A)) ⟩
+    ((ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ) ×PSh (ιNF (Gl-A A) 𝒩∘ Gl-q A)) ⊚  Gls-u (Γ ⊹ A)
+      ≡⟨ ×PShLem2 (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ) (ιNF (Gl-A A) 𝒩∘ Gl-q A) (Gls-u Γ) (Gl-u A) ⟩
+    (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ ⊚ Gls-u Γ) ×PSh ((ιNF (Gl-A A) 𝒩∘ Gl-q A) 𝒩∘ Gl-u A)
+      ≡⟨ (λ i → Gls-comp Γ i ×PSh ⋆Assoc (Gl-u A) (Gl-q A) (ιNF (Gl-A A)) (~ i)) ⟩
+    ιNES (Gls-Γ Γ) ×PSh (ιNF (Gl-A A) 𝒩∘ Gl-q A 𝒩∘ Gl-u A)
+      ≡⟨ (λ i → ιNES (Gls-Γ Γ) ×PSh Gl-comp A i) ⟩
     ιNES (Gls-Γ (Γ ⊹ A))
       ∎
 
@@ -85,7 +84,7 @@ module TwGlCC {ℓ} (𝒞 : Contextual ℓ ℓ) ⦃ 𝒞CCC : CCC 𝒞 ⦄ (base
           (Gls-Γ Γ) (idNeu (Gls-Γ Γ))) ⟩
       N-ob (TMよ GlTm-α ⟦ ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ ⊚ Gls-u Γ ⟧) (Gls-Γ Γ) (idNeu (Gls-Γ Γ))
         ≡⟨ (λ i → N-ob (TMよ GlTm-α ⟦ Gls-comp Γ i ⟧) (Gls-Γ Γ) (idNeu (Gls-Γ Γ))) ⟩
-      GlTm-α C.⟦ ⇓TMS (N-ob (⇓EnvTms (ιNES (Gls-Γ Γ))) (Gls-Γ Γ) (idNeu (Gls-Γ Γ))) ⟧
+      GlTm-α C.⟦ ⇓TMS (N-ob (⇓PShTms (ιNES (Gls-Γ Γ))) (Gls-Γ Γ) (idNeu (Gls-Γ Γ))) ⟧
         ≡⟨ (λ i → GlTm-α C.⟦ ιNFSid (Gls-Γ Γ) i ⟧) ⟩
       GlTm-α C.⟦ C.𝒾𝒹 (Gls-Γ Γ) ⟧
         ≡⟨ C.𝒾𝒹⟦⟧ GlTm-α ⟩
@@ -107,10 +106,10 @@ module TwGlCC {ℓ} (𝒞 : Contextual ℓ ℓ) ⦃ 𝒞CCC : CCC 𝒞 ⦄ (base
   GlTms-nat ! = refl
   GlTms-nat {Γ} {Δ ⊹ A} (σ ⊕ t) =
     ιNFS (Gls-Γ (Δ ⊹ A)) ⊚ Gls-q (Δ ⊹ A) ⊚ GlTms-⦇αs⦈ (σ ⊕ t)
-      ≡⟨ (λ i → (×tmLem2 (ιNFS (Gls-Γ Δ)) (ιNF (Gl-A A)) (Gls-q Δ) (Gl-q A) i)
+      ≡⟨ (λ i → (×PShLem2 (ιNFS (Gls-Γ Δ)) (ιNF (Gl-A A)) (Gls-q Δ) (Gl-q A) i)
         ⊚ GlTms-⦇αs⦈ (σ ⊕ t)) ⟩
-    (ιNFS (Gls-Γ Δ) ⊚ Gls-q Δ) ×tm (ιNF (Gl-A A) 𝒩∘ Gl-q A) ⊚ GlTms-⦇αs⦈ (σ ⊕ t)
-      ≡⟨ ×tmLem1 (ιNFS (Gls-Γ Δ) ⊚ Gls-q Δ) (ιNF (Gl-A A) 𝒩∘ Gl-q A)
+    ((ιNFS (Gls-Γ Δ) ⊚ Gls-q Δ) ×PSh (ιNF (Gl-A A) 𝒩∘ Gl-q A)) ⊚ GlTms-⦇αs⦈ (σ ⊕ t)
+      ≡⟨ ×PShLem1 (ιNFS (Gls-Γ Δ) ⊚ Gls-q Δ) (ιNF (Gl-A A) 𝒩∘ Gl-q A)
         (GlTms-⦇αs⦈ σ) (GlTm-⦇α⦈ t) ⟩
     (ιNFS (Gls-Γ Δ) ⊚ Gls-q Δ ⊚ GlTms-⦇αs⦈ σ) ⊕ ((ιNF (Gl-A A) 𝒩∘ Gl-q A) 𝒩∘ GlTm-⦇α⦈ t)
       ≡⟨ (λ i → GlTms-nat σ i ⊕ GlTm-nat t i) ⟩
@@ -122,7 +121,7 @@ module TwGlCC {ℓ} (𝒞 : Contextual ℓ ℓ) ⦃ 𝒞CCC : CCC 𝒞 ⦄ (base
   GlTm-α (t [ σ ]Gl) = GlTm-α t C.⟦ GlTms-αs σ ⟧
   GlTm-nat (_[_]Gl {Γ} {Δ} {A} t σ) =
     (ιNF (Gl-A A) 𝒩∘ Gl-q A) 𝒩∘ GlTm-⦇α⦈ (t [ σ ]Gl)
-      ≡⟨ ⋆Assoc (⇓EnvTms (GlTms-⦇αs⦈ σ)) (GlTm-⦇α⦈ t) (ιNF (Gl-A A) 𝒩∘ Gl-q A) ⟩
+      ≡⟨ ⋆Assoc (⇓PShTms (GlTms-⦇αs⦈ σ)) (GlTm-⦇α⦈ t) (ιNF (Gl-A A) 𝒩∘ Gl-q A) ⟩
     ((ιNF (Gl-A A) 𝒩∘ Gl-q A) 𝒩∘ GlTm-⦇α⦈ t) ⟦ GlTms-⦇αs⦈ σ ⟧
       ≡⟨ ap _⟦ GlTms-⦇αs⦈ σ ⟧ (GlTm-nat t) ⟩
     TMよ (GlTm-α t) ⟦ ιNFS (Gls-Γ Δ) ⊚ Gls-q Δ ⟧ ⟦ GlTms-⦇αs⦈ σ ⟧
@@ -152,16 +151,16 @@ module TwGlCC {ℓ} (𝒞 : Contextual ℓ ℓ) ⦃ 𝒞CCC : CCC 𝒞 ⦄ (base
   open Functor
 
   IndLem : (Γ : Glueings) (A : Glueing) (Δ : C.ctx)
-    (MS : fst (F-ob (⇓EnvCtx (Gls-⦇Γ⦈ Γ)) Δ)) (M : fst (F-ob (Gl-⦇A⦈ A) Δ)) →
-    N-ob (⇓EnvTms (ιNFS (Gls-Γ (Γ ⊹ A)) ⊚ Gls-q (Γ ⊹ A))) Δ (MS , M)
-     ≡ (N-ob (⇓EnvTms (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Δ MS , ιNf (N-ob (Gl-q A) Δ M))
+    (MS : fst (F-ob (⇓PShCtx (Gls-⦇Γ⦈ Γ)) Δ)) (M : fst (F-ob (Gl-⦇A⦈ A) Δ)) →
+    N-ob (⇓PShTms (ιNFS (Gls-Γ (Γ ⊹ A)) ⊚ Gls-q (Γ ⊹ A))) Δ (MS , M)
+     ≡ (N-ob (⇓PShTms (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Δ MS , ιNf (N-ob (Gl-q A) Δ M))
   IndLem Γ A Δ MS M =
-    N-ob (⇓EnvTms (ιNFS (Gls-Γ (Γ ⊹ A)) ⊚ Gls-q (Γ ⊹ A))) Δ (MS , M)
+    N-ob (⇓PShTms (ιNFS (Gls-Γ (Γ ⊹ A)) ⊚ Gls-q (Γ ⊹ A))) Δ (MS , M)
       ≡⟨ (λ i → N-ob
-        (⇓EnvTms (×tmLem2 (ιNFS (Gls-Γ Γ)) (ιNF (Gl-A A)) (Gls-q Γ) (Gl-q A) i)) Δ (MS , M)) ⟩
-    N-ob (⇓EnvTms ((ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ) ×tm (ιNF (Gl-A A) 𝒩∘ Gl-q A))) Δ (MS , M)
-      ≡⟨ (λ i → N-ob (×IndLem (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ) (ιNF (Gl-A A) 𝒩∘ Gl-q A) i) Δ (MS , M)) ⟩
-    (N-ob (⇓EnvTms (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Δ MS , ιNf (N-ob (Gl-q A) Δ M))
+        (⇓PShTms (×PShLem2 (ιNFS (Gls-Γ Γ)) (ιNF (Gl-A A)) (Gls-q Γ) (Gl-q A) i)) Δ (MS , M)) ⟩
+    N-ob (⇓PShTms ((ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ) ×PSh (ιNF (Gl-A A) 𝒩∘ Gl-q A))) Δ (MS , M)
+      ≡⟨ (λ i → N-ob (×PShInd (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ) (ιNF (Gl-A A) 𝒩∘ Gl-q A) i) Δ (MS , M)) ⟩
+    (N-ob (⇓PShTms (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Δ MS , ιNf (N-ob (Gl-q A) Δ M))
       ∎
 
   private
@@ -176,22 +175,22 @@ module TwGlCC {ℓ} (𝒞 : Contextual ℓ ℓ) ⦃ 𝒞CCC : CCC 𝒞 ⦄ (base
       N-ob ((ιNF (Gl-A A) 𝒩∘ Gl-q A) 𝒩∘ (makeVar (PShVar v)))
       ≡ N-ob (TMよ (C.makeVar (TmVar v)) ⟦ ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ ⟧)
     Var-nat-ob {Γ ⊹ B} {A} 𝑧𝑣 i Δ 𝓈 =
-      C.𝑧β (⇓TMS {Δ = Gls-Γ (Γ ⊹ B)} (N-ob (⇓EnvTms (ιNFS (Gls-Γ (Γ ⊹ B))
+      C.𝑧β (⇓TMS {Δ = Gls-Γ (Γ ⊹ B)} (N-ob (⇓PShTms (ιNFS (Gls-Γ (Γ ⊹ B))
         ⊚ Gls-q (Γ ⊹ B))) Δ 𝓈)) (~ i)
     Var-nat-ob {Γ ⊹ B} {A} (𝑠𝑣 v) i Δ (MS , M) =
       (ιNf (N-ob (Gl-q A) Δ (N-ob (makeVar (𝑠𝑣 (PShVar v))) Δ (MS , M)))
         ≡⟨ (λ j → ιNf (N-ob (Gl-q A) Δ (N-ob (make𝑠𝑣 {A = Gl-⦇A⦈ B} (PShVar v) j) Δ (MS , M)))) ⟩
       ιNf (N-ob (Gl-q A) Δ (N-ob (makeVar (PShVar v)) Δ
-        (N-ob (⇓EnvTms (π {Γ = Gls-⦇Γ⦈ Γ} {A = Gl-⦇A⦈ B})) Δ (MS , M))))
+        (N-ob (⇓PShTms (π {Γ = Gls-⦇Γ⦈ Γ} {A = Gl-⦇A⦈ B})) Δ (MS , M))))
         ≡⟨ (λ j → ιNf (N-ob (Gl-q A) Δ (N-ob (makeVar (PShVar v)) Δ
-          (N-ob (⇓Envπ {Γ = Gls-⦇Γ⦈ Γ} {A = Gl-⦇A⦈ B} j) Δ (MS , M))))) ⟩
+          (N-ob (⇓PShπ {Γ = Gls-⦇Γ⦈ Γ} {A = Gl-⦇A⦈ B} j) Δ (MS , M))))) ⟩
       ιNf (N-ob (Gl-q A) Δ (N-ob (makeVar (PShVar v)) Δ MS))
         ≡⟨ (λ j → Var-nat-ob v j Δ MS) ⟩
-      C.makeVar (TmVar v) C.⟦ ⇓TMS (N-ob (⇓EnvTms (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Δ MS) ⟧
-        ≡⟨ C.W₁⟦⟧ (TmVar v) (⇓TMS (N-ob (⇓EnvTms (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Δ MS))
+      C.makeVar (TmVar v) C.⟦ ⇓TMS (N-ob (⇓PShTms (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Δ MS) ⟧
+        ≡⟨ C.W₁⟦⟧ (TmVar v) (⇓TMS (N-ob (⇓PShTms (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Δ MS))
           (ιNf (N-ob (Gl-q B) Δ M)) ⁻¹ ⟩
       C.makeVar (𝑠𝑣 (TmVar v)) C.⟦ ⇓TMS
-        (N-ob (⇓EnvTms (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Δ MS , ιNf (N-ob (Gl-q B) Δ M)) ⟧
+        (N-ob (⇓PShTms (ιNFS (Gls-Γ Γ) ⊚ Gls-q Γ)) Δ MS , ιNf (N-ob (Gl-q B) Δ M)) ⟧
         ≡⟨ (λ j → C.makeVar (𝑠𝑣 (TmVar v)) C.⟦ ⇓TMS (IndLem Γ B Δ MS M (~ j)) ⟧) ⟩
       N-ob (TMよ (C.makeVar (𝑠𝑣 (TmVar v))) ⟦ ιNFS (Gls-Γ (Γ ⊹ B)) ⊚ Gls-q (Γ ⊹ B) ⟧) Δ (MS , M)
         ∎) i

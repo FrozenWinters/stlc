@@ -195,6 +195,21 @@ record Contextual ℓ₁ ℓ₂ where
   W₂tms : {Γ Δ : ctx} (A : ty) → tms Γ Δ → tms (Γ ⊹ A) (Δ ⊹ A)
   W₂tms A σ = W₁tms A σ ⊕ 𝑧
 
+  W₁lem1 : {Γ Δ : ctx} {A B : ty} (t : tm Δ B) (σ : tms Γ Δ) (s : tm Γ A) →
+    W₁tm A t ⟦ σ ⊕ s ⟧ ≡ t ⟦ σ ⟧
+  W₁lem1 t σ s =
+    t ⟦ π ⟧ ⟦ σ ⊕ s ⟧
+      ≡⟨ ⟦⟧⟦⟧ t π (σ ⊕ s) ⟩
+    t ⟦ π ⊚ (σ ⊕ s) ⟧
+      ≡⟨ ap (t ⟦_⟧) (πβ (σ ⊕ s)) ⟩
+    t ⟦ σ ⟧
+      ∎
+
+  W₁lem2 : {Γ Δ Σ : ctx} {A : ty} (σ : tms Δ Σ) (τ : tms Γ Δ) (t : tm Γ A) →
+    W₁tms A σ ⊚ (τ ⊕ t) ≡ σ ⊚ τ
+  W₁lem2 ! τ t = refl
+  W₁lem2 (σ ⊕ s) τ t i = W₁lem2 σ τ t i ⊕ W₁lem1 s τ t i
+
   make𝑠𝑣 : {Γ : ctx} {A B : ty} (v : IntVar Γ B) →
     makeVar (𝑠𝑣 v) ≡ W₁tm A (makeVar v)
   make𝑠𝑣 v = varβ v π ⁻¹
@@ -214,10 +229,8 @@ record Contextual ℓ₁ ℓ₂ where
   W₁⟦⟧ v σ t =
     makeVar (𝑠𝑣 v) ⟦ σ ⊕ t ⟧
       ≡⟨ ap _⟦ σ ⊕ t ⟧ (make𝑠𝑣 v) ⟩
-    makeVar v ⟦ π ⟧ ⟦ σ ⊕ t ⟧
-      ≡⟨ ⟦⟧⟦⟧ (makeVar v) π (σ ⊕ t) ⟩
-    makeVar v ⟦ π ⊚ (σ ⊕ t) ⟧
-      ≡⟨ ap (makeVar v ⟦_⟧) (πβ (σ ⊕ t)) ⟩
+    W₁tm _ (makeVar v) ⟦ σ ⊕ t ⟧
+      ≡⟨ W₁lem1 (makeVar v) σ t ⟩
     makeVar v ⟦ σ ⟧
       ∎
 
@@ -252,6 +265,17 @@ record Contextual ℓ₁ ℓ₂ where
 
   𝒾𝒹η₂ : {Γ : ctx} → makeRen (id𝑅𝑒𝑛 Γ) ≡ 𝒾𝒹 Γ
   𝒾𝒹η₂ {Γ} = derive𝒾𝒹 (𝒾𝒹 Γ)
+
+  πη : {Γ : ctx} {A : ty} → makeRen (W₁𝑅𝑒𝑛 A (id𝑅𝑒𝑛 Γ)) ≡ π
+  πη {Γ} {A} =
+    makeRen (W₁𝑅𝑒𝑛 A (id𝑅𝑒𝑛 Γ))
+      ≡⟨ makeW₁ (id𝑅𝑒𝑛 Γ) ⟩
+    W₁tms A (makeRen (id𝑅𝑒𝑛 Γ))
+      ≡⟨ ap (W₁tms A) 𝒾𝒹η₂ ⟩
+    𝒾𝒹 Γ ⊚ π
+      ≡⟨ 𝒾𝒹L π ⟩
+    π
+      ∎
 
 𝑎𝑚𝑏Cat 𝒞 = Contextual.ambCat 𝒞
 isCat𝐴𝑚𝑏Cat 𝒞 = Contextual.isCatAmbCat 𝒞
