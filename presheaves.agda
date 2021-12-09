@@ -43,8 +43,11 @@ module Presheaves {ℓ} (𝒞 : Contextual ℓ ℓ) ⦃ 𝒞CCC : CCC 𝒞 ⦄ (
     𝒫𝒮𝒽 : Contextual (lsuc ℓ) ℓ
     𝒫𝒮𝒽 = envCC
 
+    𝒫𝒮𝒽CCC : CCC 𝒫𝒮𝒽
+    𝒫𝒮𝒽CCC = envCCC
+
     open Contextual 𝒫𝒮𝒽
-    open Precategory 𝑃𝑆ℎ renaming (_∘_ to _𝒞∘_)
+    open Precategory 𝑃𝑆ℎ renaming (_∘_ to _𝒞∘_; id to 𝑖𝑑)
     open Cartesian (PShCart {𝒞 = 𝑅𝐸𝑁})
 
     ⇓PShCtx : ctx → ob
@@ -59,6 +62,9 @@ module Presheaves {ℓ} (𝒞 : Contextual ℓ ℓ) ⦃ 𝒞CCC : CCC 𝒞 ⦄ (
     ⇓PSh∘ : {Γ Δ Σ : ctx} (σ : tms Δ Σ) (τ : tms Γ Δ) →
       ⇓PShTms (σ ⊚ τ) ≡ ⇓PShTms σ 𝒞∘ ⇓PShTms τ
     ⇓PSh∘ = ⇓Env∘
+
+    ⇓PSh𝒾𝒹 : (Γ : ctx) → ⇓PShTms (𝒾𝒹 Γ) ≡ 𝑖𝑑 (⇓PShCtx Γ)
+    ⇓PSh𝒾𝒹 = ⇓Env𝒾𝒹
 
     _×PSh_ : {Γ Δ : ctx} {A B : ty} → tms Γ Δ → Hom[ A , B ] → tms (Γ ⊹ A) (Δ ⊹ B)
     _×PSh_ = _×tm_
