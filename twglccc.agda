@@ -357,39 +357,52 @@ module TwGlCCC {ℓ} (𝒞 : Contextual ℓ ℓ) ⦃ 𝒞CCC : CCC 𝒞 ⦄ (bas
   ΛTwGl-nat-⦇α⦈-ob : {Γ Δ : Glueings} {A B : Glueing} (t : GlTm (Δ ⊹ A) B) (σ : GlTms Γ Δ)
     (Σ : ctx) (𝓈 : fst (F-ob (⇓PShCtx (Gls-⦇Γ⦈ Γ)) Σ)) →
     fst (N-ob (GlTm-⦇α⦈ (ΛTwGl t T.⟦ σ ⟧)) Σ 𝓈)
-    ≡ fst (N-ob (GlTm-⦇α⦈ (ΛTwGl (t T.⟦ (σ T.⊚ T.π) ⊕ T.𝑧 ⟧))) Σ 𝓈)
+    ≡ fst (N-ob (GlTm-⦇α⦈ (ΛTwGl (t T.⟦ σ T.⊚ T.π ⊕ T.𝑧 ⟧))) Σ 𝓈)
   ΛTwGl-nat-⦇α⦈-ob {Γ} {Δ} {A} {B} t σ Σ 𝓈 =
-    {!N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t)) Σ (N-ob (⇓PShTms (GlTms-⦇αs⦈ σ)) Σ 𝓈)
+    {!fst (N-ob (GlTm-⦇α⦈ (ΛTwGl t T.⟦ σ ⟧)) Σ 𝓈)
+      ≡⟨ refl ⟩
+    N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t)) Σ (N-ob (⇓PShTms (GlTms-⦇αs⦈ σ)) Σ 𝓈)
       ≡⟨ (λ i → N-ob (C-Λnat _ _ _ _ (⇓PShTms (GlTms-⦇αs⦈ σ)) (GlTm-⦇α⦈ t) (~ i)) Σ 𝓈) ⟩
     N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t 𝒩∘ (C-pair (⇓PShTms (GlTms-⦇αs⦈ σ) 𝒩∘ C-π₁ _ _) P.𝑧))) Σ 𝓈
-      ≡⟨ {!λ i → N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t 𝒩∘
-        (C-pair (⇓PShTms (GlTms-⦇αs⦈ σ) 𝒩∘ ⇓PShπ {Gls-⦇Γ⦈ Γ} {Gl-⦇A⦈ A} (~ i)) P.𝑧))) Σ 𝓈!} ⟩
+      ≡⟨ (λ i → N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t 𝒩∘
+        (C-pair (⇓PShTms (GlTms-⦇αs⦈ σ) 𝒩∘ ⇓PShπ {Gls-⦇Γ⦈ Γ} {Gl-⦇A⦈ A} (~ i)) P.𝑧))) Σ 𝓈) ⟩
     N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t 𝒩∘
       (C-pair (⇓PShTms (GlTms-⦇αs⦈ σ) 𝒩∘ ⇓PShTms (P.π {Gls-⦇Γ⦈ Γ} {Gl-⦇A⦈ A})) P.𝑧))) Σ 𝓈
       ≡⟨ (λ i → N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t 𝒩∘
-        (C-pair (⇓∘PShTms (GlTms-⦇αs⦈ σ) (π {Gls-⦇Γ⦈ Γ} {Gl-⦇A⦈ A}) (~ i)) 𝑧))) Σ 𝓈) ⟩
-    ?
-      ∎
-    {-N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t)) Σ (N-ob (⇓PShMor (GlTms-⦇αs⦈ σ)) Σ 𝓈)
-      ≡⟨ (λ i → N-ob (C-Λnat _ _ _ _ (⇓PShMor (GlTms-⦇αs⦈ σ)) (GlTm-⦇α⦈ t) (~ i)) Σ 𝓈) ⟩
-    N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t 𝒩∘ (C-pair (⇓PShMor (GlTms-⦇αs⦈ σ) 𝒩∘ C-π₁ _ _) 𝑧))) Σ 𝓈
-      ≡⟨ (λ i → N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t 𝒩∘
-        (C-pair (⇓PShMor (GlTms-⦇αs⦈ σ) 𝒩∘ ⇓πPSh {Gls-⦇Γ⦈ Γ} {Gl-⦇A⦈ A} (~ i)) 𝑧))) Σ 𝓈) ⟩
-    N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t 𝒩∘
-      (C-pair (⇓PShMor (GlTms-⦇αs⦈ σ) 𝒩∘ ⇓PShMor (π {Gls-⦇Γ⦈ Γ} {Gl-⦇A⦈ A})) 𝑧))) Σ 𝓈
-      ≡⟨ (λ i → N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t 𝒩∘
-        (C-pair (⇓∘PShMor (GlTms-⦇αs⦈ σ) (π {Gls-⦇Γ⦈ Γ} {Gl-⦇A⦈ A}) (~ i)) 𝑧))) Σ 𝓈) ⟩
-    N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t ⟦ GlTms-⦇αs⦈ σ ⊚ (π {Gls-⦇Γ⦈ Γ} {Gl-⦇A⦈ A})
-      ⊕ 𝑧 {Gls-⦇Γ⦈ Γ} {Gl-⦇A⦈ A} ⟧)) Σ 𝓈
-      ≡⟨ (λ i → N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t ⟦ GlTms-⦇αs⦈ σ ⊚ πTwGl-⦇αs⦈ {Γ} {A} (~ i)
+        (C-pair (⇓PSh∘ (GlTms-⦇αs⦈ σ) (P.π {Gls-⦇Γ⦈ Γ} {Gl-⦇A⦈ A}) (~ i)) P.𝑧))) Σ 𝓈) ⟩
+    N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t P.⟦ GlTms-⦇αs⦈ σ P.⊚ P.π {Gls-⦇Γ⦈ Γ} {Gl-⦇A⦈ A}
+      ⊕ P.𝑧 {Gls-⦇Γ⦈ Γ} {Gl-⦇A⦈ A} ⟧)) Σ 𝓈
+      ≡⟨ (λ i → N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t P.⟦ GlTms-⦇αs⦈ σ P.⊚ πTwGl-⦇αs⦈ {Γ} {A} (~ i)
         ⊕ 𝑧TwGl-⦇α⦈ {Γ} {A} (~ i) ⟧))  Σ 𝓈) ⟩
-    N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t ⟦ GlTms-⦇αs⦈ σ ⊚ GlTms-⦇αs⦈ (G.π {Γ} {A})
-      ⊕ GlTm-⦇α⦈ (G.𝑧 {Γ} {A}) ⟧)) Σ 𝓈
-      ≡⟨ (λ i → N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t ⟦ Gl-⦇αs⦈∘ σ (G.π {Γ} {A}) (~ i)
-        ⊕ GlTm-⦇α⦈ (G.𝑧 {Γ} {A}) ⟧)) Σ 𝓈) ⟩
-    N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t ⟦ GlTms-⦇αs⦈ ((σ ∘GlTms (G.π {Γ} {A}))
-      ⊕ (G.𝑧 {Γ} {A})) ⟧)) Σ 𝓈
-      ∎-}!}
+    N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t P.⟦ GlTms-⦇αs⦈ σ P.⊚ GlTms-⦇αs⦈ (T.π {Γ} {A})
+      ⊕ GlTm-⦇α⦈ (T.𝑧 {Γ} {A}) ⟧)) Σ 𝓈
+      ≡⟨ (λ i → N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ t P.⟦ Gl-⦇αs⦈∘ σ (T.π {Γ} {A}) (~ i)
+        ⊕ GlTm-⦇α⦈ (T.𝑧 {Γ} {A}) ⟧)) Σ 𝓈) ⟩
+    N-ob (C-Λ _ _ _ (GlTm-⦇α⦈ (t T.⟦ σ T.⊚ T.π {Γ} {A} ⊕ (T.𝑧 {Γ} {A}) ⟧))) Σ 𝓈
+      ≡⟨ refl ⟩
+    fst (N-ob (GlTm-⦇α⦈ (ΛTwGl (t T.⟦ σ T.⊚ T.π ⊕ T.𝑧 ⟧))) Σ 𝓈)
+      ∎!}
+
+  𝑧TwGl-α : {Γ : Glueings} {A : Glueing} → GlTm-α (T.𝑧 {Γ} {A}) ≡ 𝑧
+  𝑧TwGl-α {Γ} {A} = ap 𝑧𝑇𝑚𝑠 (idTwGl-αs {Γ ⊹ A})
+
+  πTwGl-αs : {Γ : Glueings} {A : Glueing} → GlTms-αs (T.π {Γ} {A}) ≡ π
+  πTwGl-αs {Γ} {A} = ap π𝑇𝑚𝑠 (idTwGl-αs {Γ ⊹ A})
+
+  ΛTwGl-nat : {Γ Δ : Glueings} {A B : Glueing} (t : GlTm (Δ ⊹ A) B) (σ : GlTms Γ Δ) →
+    ΛTwGl t [ σ ]Gl ≡ ΛTwGl (t T.⟦ σ T.⊚ T.π ⊕ T.𝑧 ⟧)
+  ΛTwGl-nat {Γ} {Δ} {A} {B} t σ =
+    ≡GlTm⇒
+      (ΛTwGl-nat-⦇α⦈-ob t σ)
+      (Λ (GlTm-α t) ⟦ GlTms-αs σ ⟧
+        ≡⟨ Λnat (GlTm-α t) (GlTms-αs σ) ⟩
+      Λ (GlTm-α t ⟦ W₂tms (Gl-A A) (GlTms-αs σ) ⟧)
+        ≡⟨ (λ i → Λ (GlTm-α t ⟦ GlTms-αs σ ⊚ πTwGl-αs {Γ} {A} (~ i)
+          ⊕ 𝑧TwGl-α {Γ} {A} (~ i) ⟧)) ⟩
+      Λ (GlTm-α t ⟦ GlTms-αs σ ⊚ GlTms-αs (T.π {Γ} {A}) ⊕ GlTm-α (T.𝑧 {Γ} {A}) ⟧)
+        ≡⟨ (λ i → Λ (GlTm-α t ⟦ Gl-αs∘ σ (T.π {Γ} {A}) (~ i) ⊕ GlTm-α (T.𝑧 {Γ} {A}) ⟧)) ⟩
+      Λ (GlTm-α t ⟦ GlTms-αs (σ T.⊚ (T.π {Γ} {A})) ⊕ GlTm-α (T.𝑧 {Γ} {A}) ⟧)
+        ∎)
 
 {-  open Glueing
   open Functor

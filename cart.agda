@@ -276,6 +276,7 @@ module Enveloping {ℓ₁ ℓ₂} (𝒞 : Precategory ℓ₁ ℓ₂)
   ⇓EnvCtx = ⇓Ctx
   ⇓EnvTms = ⇓Tms
   ⇓Envπ = ⇓πTms
+  ⇓Env∘ = ⇓∘Tms
 
   open Precategory 𝒞 renaming (_∘_ to _𝒞∘_)
   open Cartesian C-cart

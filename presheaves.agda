@@ -53,8 +53,12 @@ module Presheaves {ℓ} (𝒞 : Contextual ℓ ℓ) ⦃ 𝒞CCC : CCC 𝒞 ⦄ (
     ⇓PShTms : {Γ Δ : ctx} → tms Γ Δ → 𝑃𝑆ℎ [ ⇓PShCtx Γ , ⇓PShCtx Δ ]
     ⇓PShTms = ⇓EnvTms
 
-    --⇓PShπ : {Γ : ctx} {A : ty} → ⇓PShTms {Δ = Γ} πTms ≡ C-π₁ (⇓Ctx Γ) A
-    ⇓PShπ = ⇓Envπ
+    ⇓PShπ : {Γ : ctx} {A : ty} → ⇓PShTms {Δ = Γ} π ≡ C-π₁ (⇓PShCtx Γ) A
+    ⇓PShπ {Γ} = ⇓Envπ {Γ}
+
+    ⇓PSh∘ : {Γ Δ Σ : ctx} (σ : tms Δ Σ) (τ : tms Γ Δ) →
+      ⇓PShTms (σ ⊚ τ) ≡ ⇓PShTms σ 𝒞∘ ⇓PShTms τ
+    ⇓PSh∘ = ⇓Env∘
 
     _×PSh_ : {Γ Δ : ctx} {A B : ty} → tms Γ Δ → Hom[ A , B ] → tms (Γ ⊹ A) (Δ ⊹ B)
     _×PSh_ = _×tm_
