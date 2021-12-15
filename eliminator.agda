@@ -5,7 +5,6 @@ module eliminator where
 open import contextual
 open import ccc
 open import syn
-open import ren
 
 open import Agda.Builtin.Char
 open import Cubical.Categories.Category
@@ -17,7 +16,10 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
                   (base : (c : Char) → Contextual.ty 𝒞) where
 
   open Contextual 𝒞
+  private
+    module S = Contextual σιν
   open CCC CCC𝒞
+  open Syn
 
   interpTy : Ty → ty
   interpTy (Base X) = base X
@@ -34,11 +36,11 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
   interpRen : {Γ Δ : Ctx} (σ : Ren Γ Δ) → tms (interpCtx Γ) (interpCtx Δ)
   interpRen = map𝑇𝑚𝑠₁ interpVar
 
-  interpIdRen : {Γ : Ctx} → interpRen (idRen Γ) ≡ 𝒾𝒹 (interpCtx Γ)
+  interpIdRen : {Γ : Ctx} → interpRen (id𝑅𝑒𝑛 Γ) ≡ 𝒾𝒹 (interpCtx Γ)
   interpIdRen {Γ} =
-    map𝑇𝑚𝑠₁ (λ v → makeVar (tr𝑉𝑎𝑟 interpTy v)) (idRen Γ)
-      ≡⟨ map𝑇𝑚𝑠comp₂ makeVar (tr𝑉𝑎𝑟 interpTy) (idRen Γ) ⁻¹ ⟩
-    makeRen (tr𝑅𝑒𝑛 interpTy (idRen Γ))
+    map𝑇𝑚𝑠₁ (λ v → makeVar (tr𝑉𝑎𝑟 interpTy v)) (id𝑅𝑒𝑛 Γ)
+      ≡⟨ map𝑇𝑚𝑠comp₂ makeVar (tr𝑉𝑎𝑟 interpTy) (id𝑅𝑒𝑛 Γ) ⁻¹ ⟩
+    makeRen (tr𝑅𝑒𝑛 interpTy (id𝑅𝑒𝑛 Γ))
       ≡⟨ (λ i → makeRen (trId interpTy Γ i)) ⟩
     makeRen (id𝑅𝑒𝑛 (map𝐶𝑡𝑥 interpTy Γ))
       ≡⟨ 𝒾𝒹η₂ ⟩
@@ -46,15 +48,15 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
       ∎
 
   interpW₁Ren : {Γ Δ : Ctx} {A : Ty} (σ : Ren Γ Δ) →
-    interpRen (W₁Ren A σ) ≡ interpRen σ ⊚ π
+    interpRen (W₁𝑅𝑒𝑛 A σ) ≡ interpRen σ ⊚ π
   interpW₁Ren ! = refl
   interpW₁Ren {Γ} {Δ} {A} (σ ⊕ v) i = interpW₁Ren {A = A} σ i ⊕ make𝑠𝑣 (tr𝑉𝑎𝑟 interpTy v) i
 
-  πlem : {Γ : Ctx} {A : Ty} → interpRen (W₁Ren A (idRen Γ)) ≡ π
+  πlem : {Γ : Ctx} {A : Ty} → interpRen (W₁𝑅𝑒𝑛 A (id𝑅𝑒𝑛 Γ)) ≡ π
   πlem {Γ} {A} =
-    interpRen (W₁Ren A (idRen Γ))
-      ≡⟨ interpW₁Ren (idRen Γ) ⟩
-    interpRen (idRen Γ) ⊚ π
+    interpRen (W₁𝑅𝑒𝑛 A (id𝑅𝑒𝑛 Γ))
+      ≡⟨ interpW₁Ren (id𝑅𝑒𝑛 Γ) ⟩
+    interpRen (id𝑅𝑒𝑛 Γ) ⊚ π
       ≡⟨ ap (_⊚ π) interpIdRen ⟩
     𝒾𝒹 (interpCtx Γ) ⊚ π
       ≡⟨ 𝒾𝒹L π ⟩
@@ -72,12 +74,21 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
     
   interpId : {Γ : Ctx} → interpTms (idTms Γ) ≡ 𝒾𝒹 (interpCtx Γ)
   interpId {Γ} =
-   interpTms (varify (idRen Γ))
-     ≡⟨ interpVarify (idRen Γ) ⟩
-   interpRen (idRen Γ)
+   interpTms (varify (id𝑅𝑒𝑛 Γ))
+     ≡⟨ interpVarify (id𝑅𝑒𝑛 Γ) ⟩
+   interpRen (id𝑅𝑒𝑛 Γ)
      ≡⟨ interpIdRen ⟩
    𝒾𝒹 (interpCtx Γ)
      ∎
+
+  πlemTms : {Γ : Ctx} {A : Ty} → interpTms (S.π {Γ} {A}) ≡ π
+  πlemTms {Γ} {A} =
+    interpTms (S.π {Γ} {A})
+      ≡⟨ interpVarify (W₁𝑅𝑒𝑛 A (id𝑅𝑒𝑛 Γ)) ⟩
+    interpRen (W₁𝑅𝑒𝑛 A (id𝑅𝑒𝑛 Γ))
+      ≡⟨ πlem ⟩
+    π
+      ∎
 
   interp∘Tms : {Γ Δ Σ : Ctx} (σ : Tms Δ Σ) (τ : Tms Γ Δ) →
     interpTms (σ ∘Tms τ) ≡ interpTms σ ⊚ interpTms τ
@@ -95,18 +106,6 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
       ≡⟨ ⊕⊚ (interpTms σ) (interpTm t) π ⁻¹ ⟩
     interpTms σ ⊕ interpTm t ⊚ π
       ∎
-
-  private
-    πlemTms : {Γ : Ctx} {A : Ty} → π ≡ interpTms (W₁Tms A (idTms Γ))
-    πlemTms {Γ} {A} =
-      π
-        ≡⟨ πlem ⁻¹ ⟩
-      interpRen (W₁Ren A (idRen Γ))
-        ≡⟨ interpVarify (W₁Ren A (idRen Γ)) ⁻¹ ⟩
-      interpTms (varify (W₁Ren A (idRen Γ)))
-        ≡⟨ ap interpTms (Vlem2 (idRen Γ)) ⟩
-      interpTms (W₁Tms A (idTms Γ))
-        ∎
 
   interpTm (V v) =
     interpVar v
@@ -128,8 +127,8 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
     (interpTm t
       ≡⟨ 𝑎𝑝𝑝η (interpTm t) ⟩
     Λ (𝑎𝑝𝑝 (interpTm t ⟦ π ⟧) 𝑧)
-      ≡⟨ (λ i → Λ (𝑎𝑝𝑝 (interpTm t ⟦ πlemTms {A = A} i ⟧) 𝑧)) ⟩
-    Λ (𝑎𝑝𝑝 (interpTm t ⟦ interpTms (W₁Tms A (idTms Γ)) ⟧) 𝑧)
+      ≡⟨ (λ i → Λ (𝑎𝑝𝑝 (interpTm t ⟦ πlemTms {Γ} {A} (~ i) ⟧) 𝑧)) ⟩
+    Λ (𝑎𝑝𝑝 (interpTm (t [ S.π ])) 𝑧)
       ∎) i
   interpTm (𝑧𝑣[] σ t i) =
     𝑧β (interpTms (σ ⊕ t)) i
@@ -161,13 +160,7 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
   interpVarify ! = refl
   interpVarify (σ ⊕ v) = ap (_⊕ interpVar v) (interpVarify σ)
 
-  interpW₁Tm {Γ} A t =
-    interpTm t ⟦ interpTms (varify (W₁Ren A (idRen Γ))) ⟧
-      ≡⟨ ap (interpTm t ⟦_⟧) (interpVarify (W₁Ren A (idRen Γ))) ⟩
-    interpTm t ⟦ interpRen (W₁Ren A (idRen Γ)) ⟧
-      ≡⟨ ap (interpTm t ⟦_⟧) πlem ⟩
-    interpTm t ⟦ π ⟧
-      ∎
+  interpW₁Tm {Γ} A t = ap (interpTm t ⟦_⟧) πlemTms
 
   interp∘Tms ! τ = !η (! ⊚ interpTms τ)
   interp∘Tms (σ ⊕ t) τ = ap (_⊕ interpTm (t [ τ ])) (interp∘Tms σ τ)
