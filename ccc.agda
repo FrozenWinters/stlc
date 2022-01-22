@@ -8,7 +8,7 @@ open import Cubical.Categories.Category
 
 private
   variable
-    ℓ₁ ℓ₂ : Level
+    ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
 
 -- Here is a definition of a Cartesian Closed Contextual Category
 
@@ -127,3 +127,23 @@ record CCC (𝒞 : Contextual ℓ₁ ℓ₂) : Type (ℓ₁ ⊔ ℓ₂) where
       ≡⟨ 𝑎𝑝𝑝𝐴𝑝𝑝 (t ⟦ σ ⟧) (s ⟦ σ ⟧) ⁻¹ ⟩
     𝑎𝑝𝑝 (t ⟦ σ ⟧) (s ⟦ σ ⟧)
       ∎
+
+record CCCPreserving {𝒞 : Contextual ℓ₁ ℓ₂} {𝒟 : Contextual ℓ₃ ℓ₄}
+       ⦃ 𝒞CCC : CCC 𝒞 ⦄ ⦃ 𝒟CCC : CCC 𝒟 ⦄ (F : ContextualFunctor 𝒞 𝒟)
+       : Type (ℓ₁ ⊔ ℓ₂ ⊔ ℓ₃ ⊔ ℓ₄) where
+
+  private
+    module C = Contextual 𝒞
+    module D = Contextual 𝒟
+    module Cc = CCC 𝒞CCC
+    module Dc = CCC 𝒟CCC
+
+  open ContextualFunctor F
+
+  field
+    pres-⇛ : (A B : C.ty) → CF-ty (A Cc.⇛ B) ≡ CF-ty A Dc.⇛ CF-ty B
+    pres-Λ : {Γ : C.ctx} {A B : C.ty} (t : C.tm (Γ ⊹ A) B) →
+      PathP (λ i → D.tm (CF-ctx Γ) (pres-⇛ A B i)) (CF-tm (Cc.Λ t)) (Dc.Λ (CF-tm t))
+    pres-𝑎𝑝𝑝 : {Γ : C.ctx} {A B : C.ty} (t : C.tm Γ (A Cc.⇛ B)) (s : C.tm Γ A) →
+      CF-tm (Cc.𝑎𝑝𝑝 t s) ≡
+      Dc.𝑎𝑝𝑝 (transport (λ i → D.tm (CF-ctx Γ) (pres-⇛ A B i)) (CF-tm t)) (CF-tm s)

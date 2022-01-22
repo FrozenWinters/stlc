@@ -7,7 +7,7 @@ open import syn
 open import norm
 open import normal
 open import Cubical.Data.Sigma
---open import presheaves
+open import char
 
 open import Cubical.Data.Nat renaming (zero to Z; suc to S)
 
@@ -29,19 +29,19 @@ ChurchBody (S n) = App (V (𝑠𝑣 𝑧𝑣)) (ChurchBody n)
 
 𝐴 = Base 'A'
 
-ChurchLem : (t : Tm (∅ ⊹ (𝐴 ⇒ 𝐴) ⊹ 𝐴) 𝐴) → Σ ℕ (λ n → ChurchBody n ≡ t)
+{-ChurchLem : (t : Tm (∅ ⊹ (𝐴 ⇒ 𝐴) ⊹ 𝐴) 𝐴) → Σ ℕ (λ n → ChurchBody n ≡ t)
 ChurchLem t with normalise t
-... | NEU (VN v) = {!!}
-... | NEU (APP M N) = {!!}
+... | NEU (VN v) = 0 , {!!}
+... | NEU (APP M N) = {!M!}-}
 
-ChurchThm : (t : Tm ∅ (ChurchType 𝐴)) → Σ ℕ (λ n → 𝐶𝑁𝑢𝑚 n ≡ t)
+{-ChurchThm : (t : Tm ∅ (ChurchType 𝐴)) → Σ ℕ (λ n → 𝐶𝑁𝑢𝑚 n ≡ t)
 ChurchThm t with normalise t
 ... | LAM (LAM N) with ChurchLem (ιNf N)
 ... | n , p = n ,
   {!Lam (Lam (ChurchBody n))
     ≡⟨ ap (Lam ∘ Lam) p ⟩
   ιNf (normalise t)
-    ∎!}
+    ∎!}-}
 
 
 --Some computational exmaples
@@ -69,6 +69,23 @@ idA⇒A = Id (Base 'A' ⇒ Base 'A')
 
 test3 = ιNf (normalise idA⇒A)
 test4 = correctness idA⇒A
+
+-- Violation of Nat cannonicity
+
+nf-len : {Γ : Ctx} {A : Ty} → Nf Γ A → ℕ
+ne-len : {Γ : Ctx} {A : Ty} → Ne Γ A → ℕ
+
+nf-len (NEU M) = S (ne-len M)
+nf-len (LAM N) = S (nf-len N)
+
+ne-len (VN v) = S Z
+ne-len (APP M N) = ne-len M + nf-len N
+
+test5 : ℕ
+test5 = nf-len (normalise sum)
+
+
+-- Benchmarks
 
 Agda𝐶𝑁𝑢𝑚 : ℕ → ((ℕ → ℕ) → ℕ → ℕ)
 Agda𝐶𝑁𝑢𝑚 Z = λ s z → z

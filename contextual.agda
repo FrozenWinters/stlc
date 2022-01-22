@@ -133,10 +133,6 @@ record Contextual ℓ₁ ℓ₂ where
     isCat𝑅𝑒𝑛 : isCategory REN
     isCat𝑅𝑒𝑛 = isCat𝐴𝑚𝑏Cat ρεν
 
-  derive : {Γ Δ : ctx} {A : ty} → tms Γ Δ → IntVar Δ A → tm Γ A
-  derive σ 𝑧𝑣 = 𝑧𝑇𝑚𝑠 σ
-  derive σ (𝑠𝑣 v) = derive (π𝑇𝑚𝑠 σ) v
-
   makeVar : {Γ : ctx} {A : ty} → IntVar Γ A → tm Γ A
   makeVar {Γ} = derive (𝒾𝒹 Γ)
 
@@ -145,11 +141,6 @@ record Contextual ℓ₁ ℓ₂ where
 
   makeRen : {Γ Δ : ctx} → IntRen Γ Δ → tms Γ Δ
   makeRen {Γ} = deriveRen (𝒾𝒹 Γ)
-
-  deriveMap : {Γ Δ Σ : ctx} (f : {A : ty} → tm Γ A → tm Δ A) (σ : tms Γ Σ) {A : ty}
-    (v : IntVar Σ A) → derive (map𝑇𝑚𝑠 f σ) v ≡ f (derive σ v)
-  deriveMap f (σ ⊕ t) 𝑧𝑣 = refl
-  deriveMap f (σ ⊕ t) (𝑠𝑣 v) = deriveMap f σ v
 
   derive⟦⟧ : {Γ Δ Σ : ctx} {A : ty} (v : IntVar Σ A) (σ : tms Δ Σ) (τ : tms Γ Δ) →
     derive σ v ⟦ τ ⟧ ≡ derive (σ ⊚ τ) v
@@ -290,6 +281,19 @@ module _ (𝒞 : Contextual ℓ₁ ℓ₂) where
   F-id ιREN = 𝒾𝒹η₂
   F-seq ιREN σ τ = make∘𝑅𝑒𝑛 τ σ
 
+  private
+    module R = Contextual ρεν
+
+  makeRenVar : {Γ : ctx} {A : ty} (v : R.IntVar Γ A) → R.makeVar v ≡ v
+  makeRenVar 𝑧𝑣 = refl
+  makeRenVar {Γ ⊹ A} (𝑠𝑣 v) =
+    derive (map𝑇𝑚𝑠 𝑠𝑣 (id𝑅𝑒𝑛 Γ)) v
+      ≡⟨ deriveMap 𝑠𝑣 (id𝑅𝑒𝑛 Γ) v ⟩
+    𝑠𝑣 (derive (id𝑅𝑒𝑛 Γ) v)
+      ≡⟨ ap 𝑠𝑣 (makeRenVar v) ⟩
+    𝑠𝑣 v
+      ∎
+
 -- The idea is that a contextual functor preserves the contextual structure
 
 record ContextualFunctor (𝒞 : Contextual ℓ₁ ℓ₂) (𝒟 : Contextual ℓ₃ ℓ₄)
@@ -321,6 +325,16 @@ record ContextualFunctor (𝒞 : Contextual ℓ₁ ℓ₂) (𝒟 : Contextual �
     CF-tms (σ C.⊚ τ) ≡ (CF-tms σ) D.⊚ (CF-tms τ)
   CF-comp ! τ = refl
   CF-comp (σ ⊕ t) τ i = CF-comp σ τ i ⊕ CF-sub t τ i
+
+  CF-Var : {Γ : C.ctx} {A : C.ty} (v : C.IntVar Γ A) →
+    CF-tm (C.makeVar v) ≡ D.makeVar (tr𝑉𝑎𝑟 CF-ty v)
+  CF-Var {Γ} v =
+    CF-tm (C.makeVar v)
+      ≡⟨ deriveMap₁ CF-tm (C.𝒾𝒹 Γ) v ⁻¹ ⟩
+    derive (CF-tms (C.𝒾𝒹 Γ)) (tr𝑉𝑎𝑟 CF-ty v)
+      ≡⟨ (λ i → derive (CF-id i) (tr𝑉𝑎𝑟 CF-ty v)) ⟩
+    D.makeVar (tr𝑉𝑎𝑟 CF-ty v)
+      ∎
 
   open Functor
 

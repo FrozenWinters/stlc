@@ -200,6 +200,24 @@ trId f (Γ ⊹ A) =
   W₂𝑅𝑒𝑛 (f A) (id𝑅𝑒𝑛 (map𝐶𝑡𝑥 f Γ))
     ∎
 
+derive : {ty : Type ℓ₁} {tm : 𝐶𝑡𝑥 ty → ty → Type ℓ₂} {Γ Δ : 𝐶𝑡𝑥 ty} {A : ty} →
+  𝑇𝑚𝑠 tm Γ Δ → 𝑉𝑎𝑟 ty Δ A → tm Γ A
+derive σ 𝑧𝑣 = 𝑧𝑇𝑚𝑠 σ
+derive σ (𝑠𝑣 v) = derive (π𝑇𝑚𝑠 σ) v
+
+deriveMap : {ty : Type ℓ₁} {tm₁ : 𝐶𝑡𝑥 ty → ty → Type ℓ₂} {tm₂ : 𝐶𝑡𝑥 ty → ty → Type ℓ₃}
+  {Γ Δ Σ : 𝐶𝑡𝑥 ty} (f : {A : ty} → tm₁ Γ A → tm₂ Δ A) (σ : 𝑇𝑚𝑠 tm₁ Γ Σ) {A : ty}
+  (v : 𝑉𝑎𝑟 ty Σ A) → derive (map𝑇𝑚𝑠 {tm₁ = tm₁} {tm₂} f σ) v ≡ f (derive σ v)
+deriveMap f (σ ⊕ t) 𝑧𝑣 = refl
+deriveMap f (σ ⊕ t) (𝑠𝑣 v) = deriveMap f σ v
+
+deriveMap₁ : {ty₁ : Type ℓ₁} {ty₂ : Type ℓ₂} {tm₁ : 𝐶𝑡𝑥 ty₁ → ty₁ → Type ℓ₃}
+  {tm₂ : 𝐶𝑡𝑥 ty₂ → ty₂ → Type ℓ₄} {Γ Σ : 𝐶𝑡𝑥 ty₁} {Δ : 𝐶𝑡𝑥 ty₂} {P : ty₁ → ty₂}
+  (f : {A : ty₁} → tm₁ Γ A → tm₂ Δ (P A)) (σ : 𝑇𝑚𝑠 tm₁ Γ Σ) {A : ty₁}
+  (v : 𝑉𝑎𝑟 ty₁ Σ A) → derive (map𝑇𝑚𝑠₁ {tm₁ = tm₁} {tm₂} f σ) (tr𝑉𝑎𝑟 P v) ≡ f (derive σ v)
+deriveMap₁ f (σ ⊕ t) 𝑧𝑣 = refl
+deriveMap₁ f (σ ⊕ t) (𝑠𝑣 v) = deriveMap₁ f σ v
+
 -- Proofs that things are sets
 
 module 𝑉𝑎𝑟Path {ty : Type ℓ₁} where
