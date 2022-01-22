@@ -62,35 +62,14 @@ private
   interpVarHelper 𝑧𝑣 i = 𝑧𝑣
   interpVarHelper (𝑠𝑣 v) i = 𝑠𝑣 (interpVarHelper v i)
 
-  deriveMap₁ : {Γ Δ Σ : Ctx} (f : {A : Ty} → Var Γ A → Tm Δ A) (σ : Ren Γ Σ) {A : Ty}
-    (v : Var Σ A) → C.derive (map𝑇𝑚𝑠 f σ) v ≡ f (v [ σ ]𝑅)
-  deriveMap₁ f (σ ⊕ w) 𝑧𝑣 = refl
-  deriveMap₁ f (σ ⊕ w) (𝑠𝑣 v) = deriveMap₁ f σ v
-
-  deriveMap₂ : {Γ Δ : ctx} (f : {A : ty} → IntVar Γ A → GlTm Γ A) (σ : IntRen Γ Δ) {A : ty}
-    (v : IntVar Δ A) → derive (map𝑇𝑚𝑠 f σ) v ≡ f (I.derive σ v)
-  deriveMap₂ f (σ ⊕ w) 𝑧𝑣 = refl
-  deriveMap₂ f (σ ⊕ w) (𝑠𝑣 v) = deriveMap₂ f σ v
-
-  makeRenVar : {Γ : ctx} {A : ty} (v : IntVar Γ A) →
-    I.makeVar v ≡ v
-  makeRenVar 𝑧𝑣 = refl
-  makeRenVar {Γ ⊹ B} {A} (𝑠𝑣 v) =
-    I.makeVar (𝑠𝑣 v)
-      ≡⟨ I.deriveMap 𝑠𝑣 (id𝑅𝑒𝑛 Γ) v ⟩
-    𝑠𝑣 (I.makeVar v)
-      ≡⟨ ap 𝑠𝑣 (makeRenVar v) ⟩
-    𝑠𝑣 v
-      ∎
-
   interpVarLem₁ : {Γ : Ctx} {A : Ty} (v : Var Γ A) →
     PathP (λ i → Tm (interpCtxLem Γ i) (interpTyLem A i))
       (GlTm-α (makeTwGlVar (tr𝑉𝑎𝑟 interpTy v))) (V v)
   interpVarLem₁ {Γ} {A} v i =
-    (C.derive (map𝑇𝑚𝑠 V (id𝑅𝑒𝑛 (interpCtxLem Γ i))) (interpVarHelper v i)
-      ≡⟨ deriveMap₁ V (id𝑅𝑒𝑛 (interpCtxLem Γ i)) (interpVarHelper v i) ⟩
-    V (interpVarHelper v i [ id𝑅𝑒𝑛 (interpCtxLem Γ i) ]𝑅)
-      ≡⟨ ap V ([id]𝑅𝑒𝑛 (interpVarHelper v i)) ⟩
+    (derive {tm = Tm} (map𝑇𝑚𝑠 V (id𝑅𝑒𝑛 (interpCtxLem Γ i))) (interpVarHelper v i)
+      ≡⟨ deriveMap {tm₂ = Tm} V (id𝑅𝑒𝑛 (interpCtxLem Γ i)) (interpVarHelper v i) ⟩
+    V (derive (id𝑅𝑒𝑛 (interpCtxLem Γ i)) (interpVarHelper v i))
+      ≡⟨ ap V (makeRenVar σιν (interpVarHelper v i)) ⟩
     V (interpVarHelper v i)
       ∎) i
 
@@ -98,10 +77,10 @@ private
     (GlTm-α (makeTwGlVar (tr𝑉𝑎𝑟 interpTy v))) ≡ GlTm-α (interpTm (V v))
   interpVarLem₂ {Γ} {A} v =
     GlTm-α (makeTwGlVar (tr𝑉𝑎𝑟 interpTy v))
-      ≡⟨ ap (GlTm-α ∘ makeTwGlVar) (makeRenVar (tr𝑉𝑎𝑟 interpTy v) ⁻¹) ⟩
+      ≡⟨ ap (GlTm-α ∘ makeTwGlVar) (makeRenVar ρεν (tr𝑉𝑎𝑟 interpTy v) ⁻¹) ⟩
     GlTm-α (makeTwGlVar (I.makeVar (tr𝑉𝑎𝑟 interpTy v)))
-      ≡⟨ ap GlTm-α (deriveMap₂ makeTwGlVar (id𝑅𝑒𝑛 (map𝐶𝑡𝑥 interpTy Γ)) (tr𝑉𝑎𝑟 interpTy v) ⁻¹)  ⟩
-    GlTm-α (derive (map𝑇𝑚𝑠 makeTwGlVar (id𝑅𝑒𝑛 (map𝐶𝑡𝑥 interpTy Γ))) (tr𝑉𝑎𝑟 interpTy v))
+      ≡⟨ ap GlTm-α (deriveMap makeTwGlVar (id𝑅𝑒𝑛 (map𝐶𝑡𝑥 interpTy Γ)) (tr𝑉𝑎𝑟 interpTy v) ⁻¹)  ⟩
+    GlTm-α (derive {tm = GlTm} (map𝑇𝑚𝑠 makeTwGlVar (id𝑅𝑒𝑛 (map𝐶𝑡𝑥 interpTy Γ))) (tr𝑉𝑎𝑟 interpTy v))
       ∎
 
   interpVarLem : {Γ : Ctx} {A : Ty} (v : Var Γ A) →
