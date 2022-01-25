@@ -2,8 +2,6 @@
 
 module norm where
 
-open import syn
-open import eliminator
 open import contextual
 open import ccc
 open import presheaves
@@ -16,174 +14,158 @@ open import Cubical.Categories.Functor
 open import Cubical.Categories.NaturalTransformation hiding (_⟦_⟧)
 open import Cubical.Categories.Instances.Sets
 
-open Syn
-open Presheaves σιν (λ c → Base c)
-open TwGlCC σιν (λ c → Base c)
-open TwGlCCC σιν (λ c → Base c)
-open Glueing
-open GlTm
-open Contextual TwGl
+module Norm {ℓ} (𝒞 : Contextual ℓ ℓ) ⦃ 𝒞CCC : CCC 𝒞 ⦄ (base : Char → Contextual.ty 𝒞)
+                (init : ∀ {ℓ₁ ℓ₂} → InitialCCC 𝒞 ⦃ 𝒞CCC ⦄ base {ℓ₁} {ℓ₂}) where
+  open Presheaves 𝒞 base
+  open TwGlCC 𝒞 base
+  open TwGlCCC 𝒞 base
+  open Glueing
+  open GlTm
+  open Contextual 𝒞
+  open CCC 𝒞CCC
 
-private
-  module C = Contextual σιν
-  module R = Contextual C.ρεν
-  module I = Contextual ρεν
+  private
+    module T = Contextual TwGl
+    module Tc = CCC isCCCTwGl
 
-NEULem : {Γ Δ : Ctx} {X : Char} (M : Ne Δ (Base X)) (σ : Ren Γ Δ) →
-  NEU (M [ σ ]NE) ≡ NEU M [ σ ]NF
-NEULem (VN v) σ = refl
-NEULem (APP M N) σ = refl
+  NEULem : {Γ Δ : ctx} {X : Char} (M : Ne Δ (base X)) (σ : IntRen Γ Δ) →
+    NEU (M [ σ ]NE) ≡ NEU M [ σ ]NF
+  NEULem (VN v) σ = refl
+  NEULem (APP M N) σ = refl
 
-module _ where
   open NatTrans
-  open Functor
 
-  base : (X : Char) → Glueing
-  Gl-A (base X) = Base X
-  Gl-⦇A⦈ (base X) = NF (Base X)
-  N-ob (Gl-u (base X)) Γ M = NEU M
-  N-hom (Gl-u (base X)) σ i M = NEULem M σ i
-  Gl-q (base X) = idTrans (NF (Base X))
-  Gl-comp (base X) = makeNatTransPath (λ i Σ M → ιNe M)
+  baseGl : (X : Char) → Glueing
+  Gl-A (baseGl X) = base X
+  Gl-⦇A⦈ (baseGl X) = NF (base X)
+  N-ob (Gl-u (baseGl X)) Γ M = NEU M
+  N-hom (Gl-u (baseGl X)) σ i M = NEULem M σ i
+  Gl-q (baseGl X) = idTrans (NF (base X))
+  Gl-comp (baseGl X) = makeNatTransPath (λ i Σ M → ιNe M)
 
-open Eliminator TwGl ⦃ isCCCTwGl ⦄ base
+  module _ where
+    open InitialInstance (init TwGl baseGl)
 
-open ContextualFunctor
-open CCCPreserving
+    ⟪elim⟫ : ContextualFunctor 𝒞 TwGl
+    ⟪elim⟫ = elim
 
-interpTyLem : (A : Ty) → Gl-A (interpTy A) ≡ A
-interpTyLem (Base X) = refl
-interpTyLem (A ⇒ B) i = interpTyLem A i Syn.⇒ interpTyLem B i
+    ⟪elim⟫-cp = ccc-pres
+    ⟪elim⟫-bp = base-pres
 
-interpCtxLem : (Γ : Ctx) → Gls-Γ (interpCtx Γ) ≡ Γ
-interpCtxLem ∅ = refl
-interpCtxLem (Γ ⊹ A) i = interpCtxLem Γ i ⊹ interpTyLem A i
+  module _ where
+    open InitialInstance (init 𝒞 base)
+    ⟪elim⟫-UP = UP
 
-private
-  interpVarHelper : {Γ : Ctx} {A : Ty} (v : Var Γ A) →
-    PathP (λ i → Var (interpCtxLem Γ i) (interpTyLem A i)) (tr𝑉𝑎𝑟 Gl-A (tr𝑉𝑎𝑟 interpTy v)) v
-  interpVarHelper 𝑧𝑣 i = 𝑧𝑣
-  interpVarHelper (𝑠𝑣 v) i = 𝑠𝑣 (interpVarHelper v i)
+  open ContextualFunctor
+  open CCCPreserving
 
-  interpVarLem₁ : {Γ : Ctx} {A : Ty} (v : Var Γ A) →
-    PathP (λ i → Tm (interpCtxLem Γ i) (interpTyLem A i))
-      (GlTm-α (makeTwGlVar (tr𝑉𝑎𝑟 interpTy v))) (V v)
-  interpVarLem₁ {Γ} {A} v i =
-    (derive {tm = Tm} (map𝑇𝑚𝑠 V (id𝑅𝑒𝑛 (interpCtxLem Γ i))) (interpVarHelper v i)
-      ≡⟨ deriveMap {tm₂ = Tm} V (id𝑅𝑒𝑛 (interpCtxLem Γ i)) (interpVarHelper v i) ⟩
-    V (derive (id𝑅𝑒𝑛 (interpCtxLem Γ i)) (interpVarHelper v i))
-      ≡⟨ ap V (makeRenVar σιν (interpVarHelper v i)) ⟩
-    V (interpVarHelper v i)
-      ∎) i
+  ⟪GlTm-α⟫ : ContextualFunctor TwGl 𝒞
+  CF-ty ⟪GlTm-α⟫ A = Gl-A A
+  CF-tm ⟪GlTm-α⟫ t = GlTm-α t
+  CF-id ⟪GlTm-α⟫ = idTwGl-αs
+  CF-sub ⟪GlTm-α⟫ t σ = refl
 
-  interpVarLem₂ : {Γ : Ctx} {A : Ty} (v : Var Γ A) →
-    (GlTm-α (makeTwGlVar (tr𝑉𝑎𝑟 interpTy v))) ≡ GlTm-α (interpTm (V v))
-  interpVarLem₂ {Γ} {A} v =
-    GlTm-α (makeTwGlVar (tr𝑉𝑎𝑟 interpTy v))
-      ≡⟨ ap (GlTm-α ∘ makeTwGlVar) (makeRenVar ρεν (tr𝑉𝑎𝑟 interpTy v) ⁻¹) ⟩
-    GlTm-α (makeTwGlVar (I.makeVar (tr𝑉𝑎𝑟 interpTy v)))
-      ≡⟨ ap GlTm-α (deriveMap makeTwGlVar (id𝑅𝑒𝑛 (map𝐶𝑡𝑥 interpTy Γ)) (tr𝑉𝑎𝑟 interpTy v) ⁻¹)  ⟩
-    GlTm-α (derive {tm = GlTm} (map𝑇𝑚𝑠 makeTwGlVar (id𝑅𝑒𝑛 (map𝐶𝑡𝑥 interpTy Γ))) (tr𝑉𝑎𝑟 interpTy v))
+
+  ⟪GlTm-α⟫-cp : CCCPreserving ⟪GlTm-α⟫
+  pres-⇛ ⟪GlTm-α⟫-cp A B = refl
+  pres-𝐴𝑝𝑝 ⟪GlTm-α⟫-cp {Γ} {A} {B} t =
+    𝑎𝑝𝑝 (GlTm-α (t T.⟦ T.π ⟧)) 𝑧
+      ≡⟨ (λ i → 𝑎𝑝𝑝 (GlTm-α t ⟦ π𝑇𝑚𝑠 (idTwGl-αs {Γ ⊹ A} i) ⟧) 𝑧) ⟩
+    𝐴𝑝𝑝 (TwGlCC.GlTm.GlTm-α t)
+      ≡⟨ ap 𝐴𝑝𝑝 (transportRefl (GlTm-α t)) ⁻¹ ⟩
+    𝐴𝑝𝑝 (transport refl (GlTm-α t))
+      ∎ 
+
+  ⟪F⟫ : ContextualFunctor 𝒞 𝒞
+  ⟪F⟫ = ⟪GlTm-α⟫ ∘CF ⟪elim⟫
+
+  ⟪id⟫ : ContextualFunctor 𝒞 𝒞
+  ⟪id⟫ = idCF 𝒞
+
+  transport𝐴𝑝𝑝 : {Γ Δ : ctx} {A B : ty} (a : Γ ≡ Δ) (t : tm Γ (A ⇛ B)) →
+    transport (λ i → tm (a i ⊹ A) B) (𝐴𝑝𝑝 t) ≡ 𝐴𝑝𝑝 (transport (λ i → tm (a i) (A ⇛ B)) t)
+  transport𝐴𝑝𝑝 {Γ} {Δ} {A} {B} a t =
+    J (λ Δ a → transport (λ i → tm (a i ⊹ A) B) (𝐴𝑝𝑝 t)
+      ≡ 𝐴𝑝𝑝 (transport (λ i → tm (a i) (A ⇛ B)) t))
+      (transportRefl (𝐴𝑝𝑝 t) ∙ ap 𝐴𝑝𝑝 (transportRefl t ⁻¹)) a
+
+  ⟪id⟫-cp : CCCPreserving ⟪id⟫
+  pres-⇛ ⟪id⟫-cp A B = refl
+  pres-𝐴𝑝𝑝 ⟪id⟫-cp {Γ} t =
+    CF-tm ⟪id⟫ (𝐴𝑝𝑝 t)
+      ≡⟨ transport𝐴𝑝𝑝 (map𝐶𝑡𝑥id Γ ⁻¹) t ⟩
+    𝐴𝑝𝑝 (CF-tm ⟪id⟫ t)
+          ≡⟨ (λ i → 𝐴𝑝𝑝 (transportRefl (CF-tm ⟪id⟫ t) (~ i))) ⟩
+    𝐴𝑝𝑝 (transport refl (CF-tm ⟪id⟫ t))
       ∎
 
-  interpVarLem : {Γ : Ctx} {A : Ty} (v : Var Γ A) →
-    PathP (λ i → Tm (interpCtxLem Γ i) (interpTyLem A i)) (GlTm-α (interpTm (V v))) (V v)
-  interpVarLem {Γ} {A} v =
-    subst
-      (λ t → PathP (λ i → Tm (interpCtxLem Γ i) (interpTyLem A i)) t (V v))
-      (interpVarLem₂ v) (interpVarLem₁ v)   
+  ⟪F⟫≡⟪id⟫ : ⟪F⟫ ≡ ⟪id⟫
+  ⟪F⟫≡⟪id⟫ =
+    ⟪elim⟫-UP ⟪F⟫ (∘CF-CCCPres ⟪GlTm-α⟫-cp ⟪elim⟫-cp) (λ c → ap Gl-A (⟪elim⟫-bp c))
+    ∙ ⟪elim⟫-UP ⟪id⟫ ⟪id⟫-cp (λ c → refl) ⁻¹
 
-interpTmLem : {Γ : Ctx} {A : Ty} (t : Tm Γ A) →
-  PathP (λ i → Tm (interpCtxLem Γ i) (interpTyLem A i)) (GlTm-α (interpTm t)) t
+  interpTy = CF-ty ⟪elim⟫
+  interpCtx = CF-ctx ⟪elim⟫
 
-{-# TERMINATING #-}
-interpTmsLem : {Γ Δ : Ctx} (σ : Tms Γ Δ) →
-  PathP (λ i → Tms (interpCtxLem Γ i) (interpCtxLem Δ i)) (GlTms-αs (interpTms σ)) σ
-interpTmsLem ! i = !
-interpTmsLem (σ ⊕ t) i = interpTmsLem σ i ⊕ interpTmLem t i
+  interpTyLem : (A : ty) → Gl-A (CF-ty ⟪elim⟫ A) ≡ A
+  interpTyLem A i = CF-ty (⟪F⟫≡⟪id⟫ i) A
 
-interpTmLem {Γ} {A} (V v) =
-  interpVarLem v
-interpTmLem (Lam t) i =
-  Lam (interpTmLem t i)
-interpTmLem (App t s) i =
-  App (interpTmLem t i) (interpTmLem s i)
-interpTmLem (t [ σ ]) i =
-  interpTmLem t i [ interpTmsLem σ i ]
-  
-interpTmLem {Γ} (β t s i) =
-  isSet→SquareP (λ i j → trunc)
-    (interpTmLem (App (Lam t) s))
-    (interpTmLem (t [ idTms Γ ⊕ s ]))
-    (λ k → TwGlCC.GlTm.GlTm-α (interpTm (β t s k)))
-    (β t s) i
-interpTmLem (η t i) =
-  isSet→SquareP (λ i j → trunc)
-    (interpTmLem t)
-    (interpTmLem (Lam (App (t [ varify R.π ]) (V 𝑧𝑣))))
-    (λ k → GlTm-α (interpTm (η t k)))
-    (η t) i
-interpTmLem (𝑧𝑣[] σ t i) =
-  isSet→SquareP (λ i j → trunc)
-    (interpTmLem (V 𝑧𝑣 [ σ ⊕ t ]))
-    (interpTmLem t)
-    (λ k → GlTm-α (interpTm (𝑧𝑣[] σ t k)))
-    (𝑧𝑣[] σ t) i
-interpTmLem (𝑠𝑣[] v σ t i) =
-  isSet→SquareP (λ i j → trunc)
-    (interpTmLem (V (𝑠𝑣 v) [ σ ⊕ t ]))
-    (interpTmLem (V v [ σ ]))
-    (λ k → GlTm-α (interpTm (𝑠𝑣[] v σ t k)))
-    (𝑠𝑣[] v σ t) i
-interpTmLem {Γ} {A ⇒ B} (Lam[] t σ i) =
-  isSet→SquareP (λ i j → trunc)
-    (interpTmLem (Lam t [ σ ]))
-    (interpTmLem (Lam (t [ W₂Tms A σ ])))
-    (λ k → GlTm-α (interpTm (Lam[] t σ k)))
-    (Lam[] t σ) i
-interpTmLem (App[] t s σ i) =
-  isSet→SquareP (λ i j → trunc)
-    (interpTmLem (App t s [ σ ]))
-    (interpTmLem (App (t [ σ ]) (s [ σ ])))
-    (λ k → GlTm-α (interpTm (App[] t s σ k)))
-    (App[] t s σ) i
-interpTmLem ([][] t σ τ i) =
-  isSet→SquareP (λ i j → trunc)
-    (interpTmLem (t [ σ ] [ τ ]))
-    (interpTmLem (t [ σ ∘Tms τ ]))
-    (λ k → GlTm-α (interpTm ([][] t σ τ k)))
-    ( [][] t σ τ) i
-interpTmLem {Γ} {A} (trunc t s p q i j) =
-  isSet→SquareP
-    (λ i j →
-      isOfHLevelPathP {A = λ k → Tm (interpCtxLem Γ k) (interpTyLem A k)} 2 trunc
-        (GlTm-α (interpTm (trunc t s p q i j)))
-        (trunc t s p q i j))
-    (λ k → interpTmLem (p k))
-    (λ k → interpTmLem (q k))
-    (λ k → interpTmLem t)
-    (λ k → interpTmLem s) i j
+  interpCtxLem' : (Γ : ctx) → CF-ctx ⟪F⟫ Γ ≡ CF-ctx ⟪id⟫ Γ
+  interpCtxLem' Γ i = CF-ctx (⟪F⟫≡⟪id⟫ i) Γ
 
-transportComp : ∀ {ℓ₁ ℓ₂} {A₁ A₂ : Type ℓ₁} {B₁ B₂ : Type ℓ₂}
-  {p : A₁ ≡ A₂} {q : B₁ ≡ B₂} (f : ∀ i → p i → q i) (x : A₁) →
-   transport q (f i0 x) ≡ f i1 (transport p x)
-transportComp {p = p} {q} f x = {!!}
+  interpCtxLem : (Γ : ctx) → Gls-Γ (CF-ctx ⟪elim⟫ Γ) ≡ Γ
+  interpCtxLem Γ =
+    map𝐶𝑡𝑥comp Gl-A (CF-ty ⟪elim⟫) Γ
+    ∙ interpCtxLem' Γ
+    ∙ map𝐶𝑡𝑥id Γ
 
-sem : {Γ : Ctx} {A : Ty} → Tm Γ A → GlTm (interpCtx Γ) (interpTy A)
-sem = interpTm
+  sem : {Γ : ctx} {A : ty} → tm Γ A → GlTm (interpCtx Γ) (interpTy A)
+  sem = CF-tm ⟪elim⟫
 
-normalise : {Γ : Ctx} {A : Ty} → Tm Γ A → Nf Γ A
-normalise {Γ} {A} t =
-  transport (λ i → Nf (interpCtxLem Γ i) (interpTyLem A i)) (GlTm-norm (sem t))
+  interpTmLem : {Γ : ctx} {A : ty} (t : tm Γ A) →
+    transport (λ i → tm (interpCtxLem Γ i) (interpTyLem A i)) (GlTm-α (sem t)) ≡ t
+  interpTmLem {Γ} {A} t =
+    transport (λ i → tm (interpCtxLem Γ i) (interpTyLem A i)) (GlTm-α (sem t))
+      ≡⟨ (λ j → transport (λ i → tm (interpCtxLem Γ i) (lUnit (rUnit (interpTyLem A) j) j i))
+        (GlTm-α (sem t))) ⟩
+    transport (λ i → tm (interpCtxLem Γ i) ((refl ∙ interpTyLem A ∙ refl) i)) (GlTm-α (sem t))
+      ≡⟨ transport-tm (map𝐶𝑡𝑥comp Gl-A (CF-ty ⟪elim⟫) Γ) refl
+        (interpCtxLem' Γ ∙ map𝐶𝑡𝑥id Γ) (interpTyLem A ∙ refl) (GlTm-α (sem t)) ⁻¹ ⟩
+    transport (λ i → tm ((interpCtxLem' Γ ∙ map𝐶𝑡𝑥id Γ) i) ((interpTyLem A ∙ refl) i))
+      (CF-tm ⟪F⟫ t)
+      ≡⟨ transport-tm (interpCtxLem' Γ ) (interpTyLem A) (map𝐶𝑡𝑥id Γ) refl (CF-tm ⟪F⟫ t) ⁻¹ ⟩
+    transport (λ i → tm (map𝐶𝑡𝑥id Γ i) A)
+      (transport (λ i → tm (interpCtxLem' Γ i) (interpTyLem A i)) (CF-tm ⟪F⟫ t))
+      ≡⟨ ap (transport (λ i → tm (map𝐶𝑡𝑥id Γ i) A)) (fromPathP (λ i → CF-tm (⟪F⟫≡⟪id⟫ i) t)) ⟩
+    transport (λ i → tm (map𝐶𝑡𝑥id Γ i) A) (transport (λ i → tm (map𝐶𝑡𝑥id Γ (~ i)) A) t)
+      ≡⟨ substComposite (λ Γ → tm Γ A) (map𝐶𝑡𝑥id Γ ⁻¹) (map𝐶𝑡𝑥id Γ) t ⁻¹ ⟩
+    transport (λ i → tm ((map𝐶𝑡𝑥id Γ ⁻¹ ∙ map𝐶𝑡𝑥id Γ) i) A) t
+      ≡⟨ (λ j → transport (λ i → tm (lCancel (map𝐶𝑡𝑥id Γ) j i) A) t) ⟩
+    transport (λ i → tm (refl i) A) t
+      ≡⟨ transportRefl t ⟩
+    t
+      ∎
 
-correctness : {Γ : Ctx} {A : Ty} (t : Tm Γ A) → ιNf (normalise t) ≡ t
-correctness {Γ} {A} t =
-  ιNf (normalise t)
-    ≡⟨ transportComp (λ i → ιNf {interpCtxLem Γ i} {interpTyLem A i}) (GlTm-norm (sem t)) ⁻¹ ⟩
-  transport (λ i → Tm (interpCtxLem Γ i) (interpTyLem A i)) (ιNf (GlTm-norm (sem t)))
-    ≡⟨ (λ i → transport (λ j → Tm (interpCtxLem Γ j) (interpTyLem A j))
-      (GlTm-correctness (sem t) i)) ⟩
-  transport (λ i → Tm (interpCtxLem Γ i) (interpTyLem A i)) (GlTm-α (sem t))
-    ≡⟨ transport (PathP≡Path _ _ _) (interpTmLem t) ⟩
-  t
-    ∎
+  norm : {Γ : ctx} {A : ty} → tm Γ A → Nf Γ A
+  norm {Γ} {A} t =
+    transport (λ i → Nf (interpCtxLem Γ i) (interpTyLem A i)) (GlTm-norm (sem t))
+
+  transportFibrewise : ∀ {ℓ₁ ℓ₂} {A₁ A₂ : Type ℓ₁} {B₁ B₂ : Type ℓ₂} {p : A₁ ≡ A₂}
+    {q : B₁ ≡ B₂} {f : A₁ → B₁} {g : A₂ → B₂} (a : PathP (λ i → p i → q i) f g) (x : A₁) →
+    transport q (f x) ≡ g (transport p x)
+  transportFibrewise {A₁ = A₁} {p = p} {q} {f} {g} a x =
+    transport (λ i → transport (λ j → q (i ∧ j)) (f x) ≡ a i (transport (λ j → p (i ∧ j)) x))
+      (transportRefl (f x) ∙ (λ i →  f (transportRefl x (~ i))))
+
+  correctness : {Γ : ctx} {A : ty} (t : tm Γ A) → ιNf (norm t) ≡ t
+  correctness {Γ} {A} t =
+    ιNf (norm t)
+      ≡⟨ transportFibrewise
+        (λ i → ιNf {interpCtxLem Γ i} {interpTyLem A i}) (GlTm-norm (sem t)) ⁻¹ ⟩
+    transport (λ i → tm (interpCtxLem Γ i) (interpTyLem A i)) (ιNf (GlTm-norm (sem t)))
+      ≡⟨ ap (transport (λ i → tm (interpCtxLem Γ i) (interpTyLem A i)))
+        (GlTm-correctness (sem t)) ⟩
+    transport (λ i → tm (interpCtxLem Γ i) (interpTyLem A i)) (GlTm-α (sem t))
+      ≡⟨ interpTmLem t ⟩
+    t
+      ∎

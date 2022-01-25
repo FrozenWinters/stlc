@@ -326,7 +326,7 @@ module TwGlCCC {ℓ} (𝒞 : Contextual ℓ ℓ) ⦃ 𝒞CCC : CCC 𝒞 ⦄ (bas
   -- This finishes up the basic cartesian closed structure of TwGl
   -- We now verify that the required coherence laws hold
 
-  ≡GlTm : {Γ : Glueings} {A : Glueing} {t s : GlTm Γ A} →
+  {-≡GlTm : {Γ : Glueings} {A : Glueing} {t s : GlTm Γ A} →
     N-ob (GlTm-⦇α⦈ t) ≡ N-ob (GlTm-⦇α⦈ s) → GlTm-α t ≡ GlTm-α s → t ≡ s
   GlTm-⦇α⦈ (≡GlTm {t = t} {s} p q i) = makeNatTransPath {α = GlTm-⦇α⦈ t} {β = GlTm-⦇α⦈ s} p i
   GlTm-α (≡GlTm {t = t} {s} p q i) = q i
@@ -470,12 +470,13 @@ module TwGlCCC {ℓ} (𝒞 : Contextual ℓ ℓ) ⦃ 𝒞CCC : CCC 𝒞 ⦄ (bas
       Λ (𝑎𝑝𝑝 (GlTm-α t ⟦ π ⟧) 𝑧)
         ≡⟨ (λ i → Λ (𝑎𝑝𝑝 (GlTm-α t ⟦ πTwGl-αs {Γ} {A} (~ i) ⟧) 𝑧)) ⟩
       Λ (𝑎𝑝𝑝 (GlTm-α t ⟦ GlTms-αs T.π ⟧) 𝑧)
-        ∎)
+        ∎)-}
 
-  isCCCTwGl : CCC TwGl
-  CCC._⇛_ isCCCTwGl = _⇒TwGl_
-  CCC.Λ isCCCTwGl = ΛTwGl
-  CCC.𝑎𝑝𝑝 isCCCTwGl = AppTwGl
-  CCC.Λnat isCCCTwGl t σ = {!ΛTwGl-nat t σ!}
-  CCC.𝑎𝑝𝑝β isCCCTwGl t s = {!AppGlTmβ t s!}
-  CCC.𝑎𝑝𝑝η isCCCTwGl t = {!AppGlTmη t!}
+  instance
+    isCCCTwGl : CCC TwGl
+    CCC._⇛_ isCCCTwGl = _⇒TwGl_
+    CCC.Λ isCCCTwGl = ΛTwGl
+    CCC.𝑎𝑝𝑝 isCCCTwGl = AppTwGl
+    CCC.Λnat isCCCTwGl t σ = {!ΛTwGl-nat t σ!}
+    CCC.𝑎𝑝𝑝β isCCCTwGl t s = {!AppGlTmβ t s!}
+    CCC.𝑎𝑝𝑝η isCCCTwGl t = {!AppGlTmη t!}

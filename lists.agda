@@ -140,6 +140,15 @@ map𝑇𝑚𝑠₁id {tm = tm} {Γ} {Δ ⊹ A} (σ ⊕ t) =
   transport (λ i → 𝑇𝑚𝑠 tm (map𝐶𝑡𝑥id Γ (~ i)) (map𝐶𝑡𝑥id Δ (~ i) ⊹ A)) (σ ⊕ t)
     ∎
 
+-- The proof of this lemma is due to Amélia (@plt_amy)
+transport-tm : {ty : Type ℓ₁} {tm : 𝐶𝑡𝑥 ty → ty → Type ℓ₂} {Γ₁ Γ₂ Γ₃ : 𝐶𝑡𝑥 ty} {A₁ A₂ A₃ : ty}
+  (a₁ : Γ₁ ≡ Γ₂) (b₁ : A₁ ≡ A₂) (a₂ : Γ₂ ≡ Γ₃) (b₂ : A₂ ≡ A₃) (t : tm Γ₁ A₁) →
+  transport (λ i → tm (a₂ i) (b₂ i)) (transport (λ i → tm (a₁ i) (b₁ i)) t)
+    ≡ transport (λ i → tm ((a₁ ∙ a₂) i) ((b₁ ∙ b₂) i)) t
+transport-tm {tm = tm} a₁ b₁ a₂ b₂ t i =
+  transport (λ j → tm (compPath-filler' a₁ a₂ i j) (compPath-filler' b₁ b₂ i j))
+    (transp (λ j → tm (a₁ (~ i ∧ j)) (b₁ (~ i ∧ j))) i t)
+
 -- Variables
 data 𝑉𝑎𝑟 (ty : Type ℓ) : (Γ : 𝐶𝑡𝑥 ty) (A : ty) → Type ℓ where
   𝑧𝑣 : {Γ : 𝐶𝑡𝑥 ty} {A : ty} → 𝑉𝑎𝑟 ty (Γ ⊹ A) A
@@ -257,6 +266,7 @@ trId f (Γ ⊹ A) =
   W₂𝑅𝑒𝑛 (f A) (id𝑅𝑒𝑛 (map𝐶𝑡𝑥 f Γ))
     ∎
 
+-- The idea for this construction is due to Reed Mullanix (@totbwf)
 derive : {ty : Type ℓ₁} {tm : 𝐶𝑡𝑥 ty → ty → Type ℓ₂} {Γ Δ : 𝐶𝑡𝑥 ty} {A : ty} →
   𝑇𝑚𝑠 tm Γ Δ → 𝑉𝑎𝑟 ty Δ A → tm Γ A
 derive σ 𝑧𝑣 = 𝑧𝑇𝑚𝑠 σ

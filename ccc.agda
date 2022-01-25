@@ -1,4 +1,4 @@
-{-# OPTIONS --cubical #-}
+{-# OPTIONS --cubical --allow-unsolved-metas #-}
 
 module ccc where
 
@@ -8,7 +8,7 @@ open import Cubical.Categories.Category
 
 private
   variable
-    ℓ₁ ℓ₂ ℓ₃ ℓ₄ : Level
+    ℓ ℓ₁ ℓ₂ ℓ₃ ℓ₄ ℓ₅ ℓ₆ : Level
 
 -- Here is a definition of a Cartesian Closed Contextual Category
 
@@ -142,8 +142,91 @@ record CCCPreserving {𝒞 : Contextual ℓ₁ ℓ₂} {𝒟 : Contextual ℓ₃
 
   field
     pres-⇛ : (A B : C.ty) → CF-ty (A Cc.⇛ B) ≡ CF-ty A Dc.⇛ CF-ty B
-    pres-Λ : {Γ : C.ctx} {A B : C.ty} (t : C.tm (Γ ⊹ A) B) →
-      PathP (λ i → D.tm (CF-ctx Γ) (pres-⇛ A B i)) (CF-tm (Cc.Λ t)) (Dc.Λ (CF-tm t))
-    pres-𝑎𝑝𝑝 : {Γ : C.ctx} {A B : C.ty} (t : C.tm Γ (A Cc.⇛ B)) (s : C.tm Γ A) →
-      CF-tm (Cc.𝑎𝑝𝑝 t s) ≡
-      Dc.𝑎𝑝𝑝 (transport (λ i → D.tm (CF-ctx Γ) (pres-⇛ A B i)) (CF-tm t)) (CF-tm s)
+    pres-𝐴𝑝𝑝 : {Γ : C.ctx} {A B : C.ty} (t : C.tm Γ (A Cc.⇛ B)) →
+      CF-tm (Cc.𝐴𝑝𝑝 t) ≡ Dc.𝐴𝑝𝑝 (transport (λ i → D.tm (CF-ctx Γ) (pres-⇛ A B i)) (CF-tm t))
+      
+  {-pres-𝐴𝑝𝑝 : {Γ : C.ctx} {A B : C.ty} (t : C.tm Γ (A Cc.⇛ B)) →
+    CF-tm (Cc.𝐴𝑝𝑝 t) ≡ Dc.𝐴𝑝𝑝 (transport (λ i → D.tm (CF-ctx Γ) (pres-⇛ A B i)) (CF-tm t))
+  pres-𝐴𝑝𝑝 {Γ} {A} {B} t =
+    CF-tm (Cc.𝐴𝑝𝑝 t)
+      ≡⟨ Dc.𝐴𝑝𝑝β (CF-tm (Cc.𝐴𝑝𝑝 t)) ⁻¹ ⟩
+    Dc.𝐴𝑝𝑝 (Dc.Λ (CF-tm (Cc.𝐴𝑝𝑝 t)))
+      ≡⟨ ap Dc.𝐴𝑝𝑝 (fromPathP (pres-Λ (Cc.𝐴𝑝𝑝 t)) ⁻¹) ⟩
+    Dc.𝐴𝑝𝑝 (transport (λ i → D.tm (CF-ctx Γ) (pres-⇛ A B i)) (CF-tm (Cc.Λ (Cc.𝐴𝑝𝑝 t))))
+      ≡⟨ ap (Dc.𝐴𝑝𝑝 ∘ (transport (λ i → D.tm (CF-ctx Γ) (pres-⇛ A B i))) ∘ CF-tm) (Cc.𝑎𝑝𝑝η t ⁻¹) ⟩
+    Dc.𝐴𝑝𝑝 (transport (λ i → D.tm (CF-ctx Γ) (pres-⇛ A B i)) (CF-tm t))
+      ∎-}
+
+  pres-Λ : {Γ : C.ctx} {A B : C.ty} (t : C.tm (Γ ⊹ A) B) →
+    PathP (λ i → D.tm (CF-ctx Γ) (pres-⇛ A B i)) (CF-tm (Cc.Λ t)) (Dc.Λ (CF-tm t))
+  pres-Λ {Γ} {A} {B} t =
+    toPathP
+      (transport (λ i → D.tm (CF-ctx Γ) (pres-⇛ A B i)) (CF-tm (Cc.Λ t))
+        ≡⟨ Dc.𝑎𝑝𝑝η (transport (λ i → D.tm (CF-ctx Γ) (pres-⇛ A B i)) (CF-tm (Cc.Λ t))) ⟩
+      Dc.Λ (Dc.𝐴𝑝𝑝 (transport (λ i → D.tm (CF-ctx Γ) (pres-⇛ A B i)) (CF-tm (Cc.Λ t))))
+        ≡⟨ ap Dc.Λ (pres-𝐴𝑝𝑝 (Cc.Λ t) ⁻¹) ⟩
+      Dc.Λ (CF-tm (Cc.𝐴𝑝𝑝 (Cc.Λ t)))
+        ≡⟨ (λ i → Dc.Λ (CF-tm (Cc.𝐴𝑝𝑝β t i))) ⟩
+      Dc.Λ (CF-tm t)
+        ∎)
+      
+  pres-𝑎𝑝𝑝 : {Γ : C.ctx} {A B : C.ty} (t : C.tm Γ (A Cc.⇛ B)) (s : C.tm Γ A) →
+    CF-tm (Cc.𝑎𝑝𝑝 t s) ≡
+    Dc.𝑎𝑝𝑝 (transport (λ i → D.tm (CF-ctx Γ) (pres-⇛ A B i)) (CF-tm t)) (CF-tm s)
+  pres-𝑎𝑝𝑝 {Γ} {A} {B} t s =
+    CF-tm (Cc.𝑎𝑝𝑝 t s)
+      ≡⟨ ap CF-tm (Cc.𝑎𝑝𝑝𝐴𝑝𝑝 t s) ⟩
+    CF-tm (Cc.𝐴𝑝𝑝 t C.⟦ C.𝒾𝒹 Γ ⊕ s ⟧)
+      ≡⟨ CF-sub (Cc.𝐴𝑝𝑝 t) (C.𝒾𝒹 Γ ⊕ s) ⟩
+    CF-tm (Cc.𝐴𝑝𝑝 t) D.⟦ CF-tms (C.𝒾𝒹 Γ) ⊕ CF-tm s ⟧
+      ≡⟨ (λ i → pres-𝐴𝑝𝑝 t i D.⟦ CF-id i ⊕  CF-tm s ⟧) ⟩
+    Dc.𝐴𝑝𝑝 (transport (λ i → D.tm (CF-ctx Γ) (pres-⇛ A B i)) (CF-tm t))
+      D.⟦ D.𝒾𝒹 (map𝐶𝑡𝑥 CF-ty Γ) ⊕ CF-tm s ⟧
+      ≡⟨ Dc.𝑎𝑝𝑝𝐴𝑝𝑝 (transport (λ i → D.tm (CF-ctx Γ) (pres-⇛ A B i)) (CF-tm t)) (CF-tm s) ⁻¹ ⟩
+    Dc.𝑎𝑝𝑝 (transport (λ i → D.tm (CF-ctx Γ) (pres-⇛ A B i)) (CF-tm t)) (CF-tm s)
+      ∎
+
+module _ (𝒞 : Contextual ℓ ℓ) ⦃ 𝒞CCC : CCC 𝒞 ⦄ (base₁ : Char → Contextual.ty 𝒞) where
+  open Contextual
+  open ContextualFunctor
+
+  record InitialInstance (𝒟 : Contextual ℓ₁ ℓ₂) ⦃ 𝒟CCC : CCC 𝒟 ⦄ (base₂ : Char → ty 𝒟)
+                         : Type (ℓ ⊔ ℓ₁ ⊔ ℓ₂) where
+                         
+    BasePreserving : ContextualFunctor 𝒞 𝒟 → Type ℓ₁
+    BasePreserving F = (c : Char) → CF-ty F (base₁ c) ≡ base₂ c
+    
+    field
+      elim : ContextualFunctor 𝒞 𝒟
+      ccc-pres : CCCPreserving elim
+      base-pres : BasePreserving elim
+      UP : (F : ContextualFunctor 𝒞 𝒟) → CCCPreserving F → BasePreserving F → F ≡ elim
+
+  InitialCCC : Type (ℓ ⊔ (lsuc ℓ₁) ⊔ (lsuc ℓ₂))
+  InitialCCC {ℓ₁} {ℓ₂} = (𝒟 : Contextual ℓ₁ ℓ₂) ⦃ 𝒟CCC : CCC 𝒟 ⦄ (base₂ : Char → ty 𝒟) →
+    InitialInstance 𝒟 base₂
+
+module _ {𝒞 : Contextual ℓ₁ ℓ₂} {𝒟 : Contextual ℓ₃ ℓ₄} {ℰ : Contextual ℓ₅ ℓ₆}
+         ⦃ 𝒞CCC : CCC 𝒞 ⦄ ⦃ 𝒟CCC : CCC 𝒟 ⦄ ⦃ ℰCCC : CCC ℰ ⦄
+         {G : ContextualFunctor 𝒟 ℰ} {F : ContextualFunctor 𝒞 𝒟} where
+  open ContextualFunctor
+  open CCCPreserving
+
+  private
+    module C = Contextual 𝒞
+    module D = Contextual 𝒟
+    module E = Contextual ℰ
+    module Cc = CCC 𝒞CCC
+    module Dc = CCC 𝒟CCC
+    module Ec = CCC ℰCCC
+
+  ∘CF-CCCPres : CCCPreserving G → CCCPreserving F → CCCPreserving (G ∘CF F)
+  pres-⇛ (∘CF-CCCPres p₁ p₂) A B =
+    ap (CF-ty G) (pres-⇛ p₂ A B) ∙ (pres-⇛ p₁ (CF-ty F A) (CF-ty F B))
+  pres-𝐴𝑝𝑝 (∘CF-CCCPres p₁ p₂) {Γ} {A} {B} t =
+    {!CF-tm G (CF-tm F (Cc.𝐴𝑝𝑝 t))
+      ≡⟨ ap (CF-tm G) (pres-𝐴𝑝𝑝 p₂ t) ⟩
+    CF-tm G (Dc.𝐴𝑝𝑝 (transport (λ i → D.tm (CF-ctx F Γ) (pres-⇛ p₂ A B i)) (CF-tm F t)))
+      ≡⟨ pres-𝐴𝑝𝑝 p₁ (transport (λ i → D.tm (CF-ctx F Γ) (pres-⇛ p₂ A B i)) (CF-tm F t)) ⟩
+    ?
+      ∎!}
