@@ -3,17 +3,17 @@
 module tests where
 
 open import lists
-open import syn
 open import norm
 open import normal
-open import Cubical.Data.Sigma
-open import char
+open import syn
+open import eliminator
 
+open import Cubical.Data.Sigma
 open import Cubical.Data.Nat renaming (zero to Z; suc to S)
 
 open Syn
---open Presheaves σιν (λ c → Base c)
-open Normal σιν (λ c → Base c)
+open Normal σιν Base
+open Norm σινInitial
 
 ChurchType : Ty → Ty
 ChurchType A = (A ⇒ A) ⇒ A ⇒ A
@@ -58,7 +58,7 @@ Plus = Lam (Lam (Lam (Lam (App (App (V (𝑠𝑣 (𝑠𝑣 (𝑠𝑣 𝑧𝑣)))
 
 sum = 𝑃𝑙𝑢𝑠𝐸𝑥𝑝𝑟 (Base 'A') 2 2
 
-test1 = ιNf (normalise sum)
+test1 = ιNf (norm sum)
 
 test2 = correctness sum
 
@@ -67,7 +67,7 @@ Id A = Lam (V 𝑧𝑣)
 
 idA⇒A = Id (Base 'A' ⇒ Base 'A')
 
-test3 = ιNf (normalise idA⇒A)
+test3 = ιNf (norm idA⇒A)
 test4 = correctness idA⇒A
 
 -- Violation of Nat cannonicity
@@ -82,7 +82,7 @@ ne-len (VN v) = S Z
 ne-len (APP M N) = ne-len M + nf-len N
 
 test5 : ℕ
-test5 = nf-len (normalise sum)
+test5 = nf-len (norm sum)
 
 
 -- Benchmarks

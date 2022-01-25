@@ -14,8 +14,8 @@ open import Cubical.Categories.Functor
 open import Cubical.Categories.NaturalTransformation hiding (_⟦_⟧)
 open import Cubical.Categories.Instances.Sets
 
-module Norm {ℓ} (𝒞 : Contextual ℓ ℓ) ⦃ 𝒞CCC : CCC 𝒞 ⦄ (base : Char → Contextual.ty 𝒞)
-                (init : ∀ {ℓ₁ ℓ₂} → InitialCCC 𝒞 ⦃ 𝒞CCC ⦄ base {ℓ₁} {ℓ₂}) where
+module Norm {ℓ} {𝒞 : Contextual ℓ ℓ} ⦃ 𝒞CCC : CCC 𝒞 ⦄ {base : Char → Contextual.ty 𝒞}
+                (init : InitialCCC 𝒞 base) where
   open Presheaves 𝒞 base
   open TwGlCC 𝒞 base
   open TwGlCCC 𝒞 base
@@ -129,11 +129,12 @@ module Norm {ℓ} (𝒞 : Contextual ℓ ℓ) ⦃ 𝒞CCC : CCC 𝒞 ⦄ (base :
       ≡⟨ (λ j → transport (λ i → tm (interpCtxLem Γ i) (lUnit (rUnit (interpTyLem A) j) j i))
         (GlTm-α (sem t))) ⟩
     transport (λ i → tm (interpCtxLem Γ i) ((refl ∙ interpTyLem A ∙ refl) i)) (GlTm-α (sem t))
-      ≡⟨ transport-tm (map𝐶𝑡𝑥comp Gl-A (CF-ty ⟪elim⟫) Γ) refl
+      ≡⟨ transport-tm {tm = tm} (map𝐶𝑡𝑥comp Gl-A (CF-ty ⟪elim⟫) Γ) refl
         (interpCtxLem' Γ ∙ map𝐶𝑡𝑥id Γ) (interpTyLem A ∙ refl) (GlTm-α (sem t)) ⁻¹ ⟩
     transport (λ i → tm ((interpCtxLem' Γ ∙ map𝐶𝑡𝑥id Γ) i) ((interpTyLem A ∙ refl) i))
       (CF-tm ⟪F⟫ t)
-      ≡⟨ transport-tm (interpCtxLem' Γ ) (interpTyLem A) (map𝐶𝑡𝑥id Γ) refl (CF-tm ⟪F⟫ t) ⁻¹ ⟩
+      ≡⟨ transport-tm {tm = tm} (interpCtxLem' Γ ) (interpTyLem A) (map𝐶𝑡𝑥id Γ) refl
+        (CF-tm ⟪F⟫ t) ⁻¹ ⟩
     transport (λ i → tm (map𝐶𝑡𝑥id Γ i) A)
       (transport (λ i → tm (interpCtxLem' Γ i) (interpTyLem A i)) (CF-tm ⟪F⟫ t))
       ≡⟨ ap (transport (λ i → tm (map𝐶𝑡𝑥id Γ i) A)) (fromPathP (λ i → CF-tm (⟪F⟫≡⟪id⟫ i) t)) ⟩

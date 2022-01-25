@@ -144,18 +144,6 @@ record CCCPreserving {𝒞 : Contextual ℓ₁ ℓ₂} {𝒟 : Contextual ℓ₃
     pres-⇛ : (A B : C.ty) → CF-ty (A Cc.⇛ B) ≡ CF-ty A Dc.⇛ CF-ty B
     pres-𝐴𝑝𝑝 : {Γ : C.ctx} {A B : C.ty} (t : C.tm Γ (A Cc.⇛ B)) →
       CF-tm (Cc.𝐴𝑝𝑝 t) ≡ Dc.𝐴𝑝𝑝 (transport (λ i → D.tm (CF-ctx Γ) (pres-⇛ A B i)) (CF-tm t))
-      
-  {-pres-𝐴𝑝𝑝 : {Γ : C.ctx} {A B : C.ty} (t : C.tm Γ (A Cc.⇛ B)) →
-    CF-tm (Cc.𝐴𝑝𝑝 t) ≡ Dc.𝐴𝑝𝑝 (transport (λ i → D.tm (CF-ctx Γ) (pres-⇛ A B i)) (CF-tm t))
-  pres-𝐴𝑝𝑝 {Γ} {A} {B} t =
-    CF-tm (Cc.𝐴𝑝𝑝 t)
-      ≡⟨ Dc.𝐴𝑝𝑝β (CF-tm (Cc.𝐴𝑝𝑝 t)) ⁻¹ ⟩
-    Dc.𝐴𝑝𝑝 (Dc.Λ (CF-tm (Cc.𝐴𝑝𝑝 t)))
-      ≡⟨ ap Dc.𝐴𝑝𝑝 (fromPathP (pres-Λ (Cc.𝐴𝑝𝑝 t)) ⁻¹) ⟩
-    Dc.𝐴𝑝𝑝 (transport (λ i → D.tm (CF-ctx Γ) (pres-⇛ A B i)) (CF-tm (Cc.Λ (Cc.𝐴𝑝𝑝 t))))
-      ≡⟨ ap (Dc.𝐴𝑝𝑝 ∘ (transport (λ i → D.tm (CF-ctx Γ) (pres-⇛ A B i))) ∘ CF-tm) (Cc.𝑎𝑝𝑝η t ⁻¹) ⟩
-    Dc.𝐴𝑝𝑝 (transport (λ i → D.tm (CF-ctx Γ) (pres-⇛ A B i)) (CF-tm t))
-      ∎-}
 
   pres-Λ : {Γ : C.ctx} {A B : C.ty} (t : C.tm (Γ ⊹ A) B) →
     PathP (λ i → D.tm (CF-ctx Γ) (pres-⇛ A B i)) (CF-tm (Cc.Λ t)) (Dc.Λ (CF-tm t))
@@ -192,7 +180,8 @@ module _ (𝒞 : Contextual ℓ ℓ) ⦃ 𝒞CCC : CCC 𝒞 ⦄ (base₁ : Char 
 
   record InitialInstance (𝒟 : Contextual ℓ₁ ℓ₂) ⦃ 𝒟CCC : CCC 𝒟 ⦄ (base₂ : Char → ty 𝒟)
                          : Type (ℓ ⊔ ℓ₁ ⊔ ℓ₂) where
-                         
+    constructor initIn
+    
     BasePreserving : ContextualFunctor 𝒞 𝒟 → Type ℓ₁
     BasePreserving F = (c : Char) → CF-ty F (base₁ c) ≡ base₂ c
     
@@ -202,8 +191,7 @@ module _ (𝒞 : Contextual ℓ ℓ) ⦃ 𝒞CCC : CCC 𝒞 ⦄ (base₁ : Char 
       base-pres : BasePreserving elim
       UP : (F : ContextualFunctor 𝒞 𝒟) → CCCPreserving F → BasePreserving F → F ≡ elim
 
-  InitialCCC : Type (ℓ ⊔ (lsuc ℓ₁) ⊔ (lsuc ℓ₂))
-  InitialCCC {ℓ₁} {ℓ₂} = (𝒟 : Contextual ℓ₁ ℓ₂) ⦃ 𝒟CCC : CCC 𝒟 ⦄ (base₂ : Char → ty 𝒟) →
+  InitialCCC = ∀ {ℓ₁} {ℓ₂} (𝒟 : Contextual ℓ₁ ℓ₂) ⦃ 𝒟CCC : CCC 𝒟 ⦄ (base₂ : Char → ty 𝒟) →
     InitialInstance 𝒟 base₂
 
 module _ {𝒞 : Contextual ℓ₁ ℓ₂} {𝒟 : Contextual ℓ₃ ℓ₄} {ℰ : Contextual ℓ₅ ℓ₆}

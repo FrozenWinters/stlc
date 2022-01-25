@@ -14,7 +14,6 @@ open import Cubical.Categories.Functor
 
 module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 : CCC 𝒞 ⦄
                   (base : (c : Char) → Contextual.ty 𝒞) where
-
   open Contextual 𝒞
   private
     module S = Contextual σιν
@@ -24,7 +23,7 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
   interpTy : Ty → ty
   interpTy (Base X) = base X
   interpTy (A ⇒ B) = (interpTy A) ⇛ (interpTy B)
-  
+
   interpCtx : Ctx → ctx
   interpCtx Γ = map𝐶𝑡𝑥 interpTy Γ
 
@@ -71,7 +70,7 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
 
   interpVarify : {Γ Δ : Ctx} (σ : Ren Γ Δ) →
     interpTms (varify σ) ≡ interpRen σ
-    
+
   interpId : {Γ : Ctx} → interpTms (idTms Γ) ≡ 𝒾𝒹 (interpCtx Γ)
   interpId {Γ} =
    interpTms (varify (id𝑅𝑒𝑛 Γ))
@@ -173,18 +172,18 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
   CF-id elim = interpId
   CF-sub elim t σ = refl
 
-  elimAmb : Functor SYN ambCat
-  elimAmb = ambFun elim
-
   open CCCPreserving
 
-  elim-pres : CCCPreserving elim
-  pres-⇛ elim-pres A B = refl
-  pres-Λ elim-pres t = refl
-  pres-𝑎𝑝𝑝 elim-pres t s i = 𝑎𝑝𝑝 (transportRefl (interpTm t) (~ i)) (interpTm s)
+  CCCPres : CCCPreserving elim
+  pres-⇛ CCCPres A B = refl
+  pres-𝐴𝑝𝑝 CCCPres {Γ} {A} {B} t i =
+    𝑎𝑝𝑝 (transportRefl (interpTm t) (~ i) ⟦ πlemTms {Γ} {A} i ⟧) 𝑧
 
   BasePreserving : ContextualFunctor σιν 𝒞 → Type ℓ₁
   BasePreserving F = (c : Char) → CF-ty F (Base c) ≡ base c
+
+  BasePres : BasePreserving elim
+  BasePres c = refl
 
   module UP {F : ContextualFunctor σιν 𝒞} (p₁ : CCCPreserving F) (p₂ : BasePreserving F) where
     UP-ty' : (A : Ty) → CF-ty F A ≡ CF-ty elim A
@@ -234,14 +233,6 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
           ∎)
         a
 
-    transport-tm : {Γ₁ Γ₂ Γ₃ : ctx} {A₁ A₂ A₃ : ty} (a₁ : Γ₁ ≡ Γ₂) (b₁ : A₁ ≡ A₂) (a₂ : Γ₂ ≡ Γ₃)
-      (b₂ : A₂ ≡ A₃) (t : tm Γ₁ A₁) →
-      transport (λ i → tm (a₂ i) (b₂ i)) (transport (λ i → tm (a₁ i) (b₁ i)) t)
-        ≡ transport (λ i → tm ((a₁ ∙ a₂) i) ((b₁ ∙ b₂) i)) t
-    transport-tm a₁ b₁ a₂ b₂ t i =
-      transport (λ j → tm (compPath-filler' a₁ a₂ i j) (compPath-filler' b₁ b₂ i j))
-        (transp (λ j → tm (a₁ (~ i ∧ j)) (b₁ (~ i ∧ j))) i t)
-
     UP-tm' {Γ} {A} (V v) =
       (CF-tm F (V v)
         ≡⟨ (λ i → CF-tm F (V (makeRenVar σιν v (~ i)))) ⟩
@@ -257,7 +248,7 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
           ≡⟨ (λ i → transport (λ j → tm (lUnit (UP-ctx) i j Γ)
             (UP-ty j (A ⇒ B))) (CF-tm F (Lam t))) ⟩
         transport (λ j → tm ((refl ∙ (λ i → UP-ctx i Γ)) j) (UP-ty' (A ⇒ B) j)) (CF-tm F (Lam t))
-          ≡⟨ transport-tm refl (pres-⇛ p₁ A B) (λ j → UP-ctx j Γ)
+          ≡⟨ transport-tm {tm = tm} refl (pres-⇛ p₁ A B) (λ j → UP-ctx j Γ)
             (λ j → UP-ty' A j ⇛ UP-ty' B j) (CF-tm F (Lam t)) ⁻¹ ⟩
         transport (λ j → tm (UP-ctx j Γ) (UP-ty' A j ⇛ UP-ty' B j))
           (transport (λ i → tm (map𝐶𝑡𝑥 (CF-ty F) Γ) (pres-⇛ p₁ A B i)) (CF-tm F (Lam t)))
@@ -353,3 +344,10 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
         (λ k → interpTm t ⟦ interpTms σ ⟧)
         (λ k → UP-tm k (t [ σ ]))
         (λ k → UP-tm k t ⟦ map𝑇𝑚𝑠₁ (UP-tm k) σ ⟧) i
+
+open Syn
+
+σινInitial : InitialCCC σιν (λ c → Base c)
+σινInitial 𝒟 base = initIn elim CCCPres BasePres (λ F p₁ p₂ → UP.UP p₁ p₂)
+  where
+    open Eliminator 𝒟 base
