@@ -476,6 +476,6 @@ module TwGlCCC {ℓ} (𝒞 : Contextual ℓ ℓ) ⦃ 𝒞CCC : CCC 𝒞 ⦄ (bas
   CCC._⇛_ isCCCTwGl = _⇒TwGl_
   CCC.Λ isCCCTwGl = ΛTwGl
   CCC.𝑎𝑝𝑝 isCCCTwGl = AppTwGl
-  CCC.Λnat isCCCTwGl {Γ} {Δ} {A} {B} = {!ΛTwGl-nat {Γ} {Δ} {A} {B}!}
-  CCC.𝑎𝑝𝑝β isCCCTwGl {Γ} {A} {B} = {!AppGlTmβ {Γ} {A} {B}!}
-  CCC.𝑎𝑝𝑝η isCCCTwGl {Γ} {A} {B} = {!AppGlTmη {Γ} {A} {B}!}
+  CCC.Λnat isCCCTwGl t σ = {!ΛTwGl-nat t σ!}
+  CCC.𝑎𝑝𝑝β isCCCTwGl t s = {!AppGlTmβ t s!}
+  CCC.𝑎𝑝𝑝η isCCCTwGl t = {!AppGlTmη t!}

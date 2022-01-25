@@ -48,6 +48,9 @@ module _ where
 
 open Eliminator TwGl ⦃ isCCCTwGl ⦄ base
 
+open ContextualFunctor
+open CCCPreserving
+
 interpTyLem : (A : Ty) → Gl-A (interpTy A) ≡ A
 interpTyLem (Base X) = refl
 interpTyLem (A ⇒ B) i = interpTyLem A i Syn.⇒ interpTyLem B i

@@ -24,6 +24,15 @@ map𝐶𝑡𝑥 : {ty₁ : Type ℓ₁} {ty₂ : Type ℓ₂} (f : ty₁ → ty�
 map𝐶𝑡𝑥 f ∅ = ∅
 map𝐶𝑡𝑥 f (Γ ⊹ A) = map𝐶𝑡𝑥 f Γ ⊹ f A
 
+map𝐶𝑡𝑥id : {ty : Type ℓ} (Γ : 𝐶𝑡𝑥 ty) → map𝐶𝑡𝑥 (λ A → A) Γ ≡ Γ
+map𝐶𝑡𝑥id ∅ = refl
+map𝐶𝑡𝑥id (Γ ⊹ A) i = map𝐶𝑡𝑥id Γ i ⊹ A
+
+map𝐶𝑡𝑥comp : {ty₁ : Type ℓ₁} {ty₂ : Type ℓ₂} {ty₃ : Type ℓ₃} (g : ty₂ → ty₃) (f : ty₁ → ty₂)
+  (Γ : 𝐶𝑡𝑥 ty₁) → map𝐶𝑡𝑥 g (map𝐶𝑡𝑥 f Γ) ≡ map𝐶𝑡𝑥 (g ∘ f) Γ
+map𝐶𝑡𝑥comp g f ∅ = refl
+map𝐶𝑡𝑥comp g f (Γ ⊹ A) i = map𝐶𝑡𝑥comp g f Γ i ⊹ g (f A)
+
 -- 𝑇𝑚𝑠 forms indexed lists representing substitutions (terms of given types in a common context)
 infixl 20 _⊕_
 data 𝑇𝑚𝑠 {ty : Type ℓ₁} (tm : 𝐶𝑡𝑥 ty → ty → Type ℓ₂)
@@ -82,6 +91,54 @@ map𝑇𝑚𝑠comp₂ : {ty₁ : Type ℓ₁} {ty₂ : Type ℓ₂} {tm₁ : �
 map𝑇𝑚𝑠comp₂ f g ! = refl
 map𝑇𝑚𝑠comp₂ {tm₂ = tm₂} {Γ₂ = Γ₂} f g (σ ⊕ t) i =
   map𝑇𝑚𝑠comp₂ {tm₂ = tm₂} {Γ₂ = Γ₂} f g σ i ⊕ f (g t)
+
+transport⊕ : {ty : Type ℓ₁} {tm : 𝐶𝑡𝑥 ty → ty → Type ℓ₂} {Γ Δ Σ Ω : 𝐶𝑡𝑥 ty} {A : ty}
+  (a : Γ ≡ Δ) (b : Σ ≡ Ω) (σ : 𝑇𝑚𝑠 tm Γ Σ) (t : tm Γ A) →
+  transport (λ i → 𝑇𝑚𝑠 tm (a i) (b i ⊹ A)) (σ ⊕ t)
+    ≡ transport (λ i → 𝑇𝑚𝑠 tm (a i) (b i)) σ ⊕ transport (λ i → tm (a i) A) t
+transport⊕ {tm = tm} {Γ} {Δ} {Σ} {Ω} {A} a b σ t =
+  J (λ Δ a → transport (λ i → 𝑇𝑚𝑠 tm (a i) (b i ⊹ A)) (σ ⊕ t)
+    ≡ transport (λ i → 𝑇𝑚𝑠 tm (a i) (b i)) σ ⊕ transport (λ i → tm (a i) A) t)
+    (J (λ Ω b →  transport (λ i → 𝑇𝑚𝑠 tm Γ (b i ⊹ A)) (σ ⊕ t) ≡
+      transport (λ i → 𝑇𝑚𝑠 tm Γ (b i)) σ ⊕ transport (λ i → tm Γ A) t)
+      (transportRefl (σ ⊕ t) ∙ (λ i → transportRefl σ (~ i) ⊕ transportRefl t (~ i))) b) a
+
+map𝑇𝑚𝑠comp₃ : {ty₁ : Type ℓ₁} {ty₂ : Type ℓ₂} {ty₃ : Type ℓ₃} {Γ Δ : 𝐶𝑡𝑥 ty₁}
+  {tm₁ : 𝐶𝑡𝑥 ty₁ → ty₁ → Type ℓ₄} {tm₂ : 𝐶𝑡𝑥 ty₂ → ty₂ → Type ℓ₅} {tm₃ : 𝐶𝑡𝑥 ty₃ → ty₃ → Type ℓ₆}
+  {P : ty₁ → ty₂} {Q : ty₂ → ty₃}
+  (f : {A : ty₂} → tm₂ (map𝐶𝑡𝑥 P Γ) A → tm₃ (map𝐶𝑡𝑥 Q (map𝐶𝑡𝑥 P Γ)) (Q A))
+  (g : {A : ty₁} → tm₁ Γ A → tm₂ (map𝐶𝑡𝑥 P Γ) (P A))
+  (σ : 𝑇𝑚𝑠 tm₁ Γ Δ) →
+  map𝑇𝑚𝑠 {tm₁ = tm₃} {tm₃} (λ {A} → transport (λ i → tm₃ (map𝐶𝑡𝑥comp Q P Γ i) A))
+    (map𝑇𝑚𝑠₁ (f ∘ g) σ)
+  ≡ transport (λ i → 𝑇𝑚𝑠 tm₃ (map𝐶𝑡𝑥comp Q P Γ i) (map𝐶𝑡𝑥comp Q P Δ i))
+    (map𝑇𝑚𝑠₁ {tm₁ = tm₂} {tm₂ = tm₃} f (map𝑇𝑚𝑠₁ g σ))
+map𝑇𝑚𝑠comp₃ f g ! = fromPathP (λ i → !) ⁻¹
+map𝑇𝑚𝑠comp₃ {Γ = Δ} {Σ ⊹ A} {tm₁} {tm₂} {tm₃} {P} {Q} f g (σ ⊕ t) =
+  map𝑇𝑚𝑠 (λ {B} → transport (λ i → tm₃ (map𝐶𝑡𝑥comp Q P Δ i) B)) (map𝑇𝑚𝑠₁ (f ∘ g) σ)
+    ⊕ transport (λ i → tm₃ (map𝐶𝑡𝑥comp Q P Δ i) (Q (P A))) (f (g t))
+    ≡⟨ (λ i → map𝑇𝑚𝑠comp₃ f g σ i
+      ⊕ transport (λ i → tm₃ (map𝐶𝑡𝑥comp Q P Δ i) (Q (P A))) (f (g t))) ⟩
+  transport (λ i → 𝑇𝑚𝑠 tm₃ (map𝐶𝑡𝑥comp Q P Δ i) (map𝐶𝑡𝑥comp Q P Σ i)) (map𝑇𝑚𝑠₁ f (map𝑇𝑚𝑠₁ g σ))
+    ⊕ transport (λ i → tm₃ (map𝐶𝑡𝑥comp Q P Δ i) (Q (P A))) (f (g t))
+    ≡⟨ transport⊕ (map𝐶𝑡𝑥comp Q P Δ) (map𝐶𝑡𝑥comp Q P Σ) (map𝑇𝑚𝑠₁ f (map𝑇𝑚𝑠₁ g σ)) (f (g t)) ⁻¹ ⟩
+  transport (λ i → 𝑇𝑚𝑠 tm₃ (map𝐶𝑡𝑥comp Q P Δ i) (map𝐶𝑡𝑥comp Q P Σ i ⊹ Q (P A)))
+    (map𝑇𝑚𝑠₁ f (map𝑇𝑚𝑠₁ g σ) ⊕ f (g t))
+    ∎
+
+map𝑇𝑚𝑠₁id : {ty : Type ℓ₁} {tm : 𝐶𝑡𝑥 ty → ty → Type ℓ₂} {Γ Δ : 𝐶𝑡𝑥 ty} (σ : 𝑇𝑚𝑠 tm Γ Δ) →
+  map𝑇𝑚𝑠₁ {tm₁ = tm} {tm} (λ {A} → transport (λ i → tm (map𝐶𝑡𝑥id Γ (~ i)) A)) σ
+  ≡ transport (λ i → 𝑇𝑚𝑠 tm (map𝐶𝑡𝑥id Γ (~ i)) (map𝐶𝑡𝑥id Δ (~ i))) σ
+map𝑇𝑚𝑠₁id ! = fromPathP (λ i → !) ⁻¹
+map𝑇𝑚𝑠₁id {tm = tm} {Γ} {Δ ⊹ A} (σ ⊕ t) =
+  map𝑇𝑚𝑠₁ (λ {B} → transport (λ i → tm (map𝐶𝑡𝑥id Γ (~ i)) B)) σ
+    ⊕ transport (λ i → tm (map𝐶𝑡𝑥id Γ (~ i)) A) t
+    ≡⟨ (λ i → map𝑇𝑚𝑠₁id σ i ⊕ transport (λ i → tm (map𝐶𝑡𝑥id Γ (~ i)) A) t) ⟩
+  transport (λ i → 𝑇𝑚𝑠 tm (map𝐶𝑡𝑥id Γ (~ i)) (map𝐶𝑡𝑥id Δ (~ i))) σ
+    ⊕ transport (λ i → tm (map𝐶𝑡𝑥id Γ (~ i)) A) t
+    ≡⟨ transport⊕ (map𝐶𝑡𝑥id Γ ⁻¹) (map𝐶𝑡𝑥id Δ ⁻¹) σ t ⁻¹ ⟩
+  transport (λ i → 𝑇𝑚𝑠 tm (map𝐶𝑡𝑥id Γ (~ i)) (map𝐶𝑡𝑥id Δ (~ i) ⊹ A)) (σ ⊕ t)
+    ∎
 
 -- Variables
 data 𝑉𝑎𝑟 (ty : Type ℓ) : (Γ : 𝐶𝑡𝑥 ty) (A : ty) → Type ℓ where
