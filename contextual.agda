@@ -1,4 +1,4 @@
-{-# OPTIONS --cubical --allow-unsolved-metas #-}
+{-# OPTIONS --cubical #-}
 
 module contextual where
 
@@ -268,6 +268,25 @@ record Contextual ℓ₁ ℓ₂ where
     π
       ∎
 
+  -- Some transport lemmas
+  transp𝒾𝒹 : {Δ Σ : ctx} (a : Δ ≡ Σ) →
+    transport (λ i → tms (a i) (a i)) (𝒾𝒹 Δ) ≡ 𝒾𝒹 Σ
+  transp𝒾𝒹 {Δ} {Σ} a =
+    J (λ Σ a → transport (λ i → tms (a i) (a i)) (𝒾𝒹 Δ) ≡ 𝒾𝒹 Σ)
+      (transportRefl (𝒾𝒹 Δ)) a
+
+  transp⟦⟧ : {Γ₁ Γ₂ Δ₁ Δ₂ : ctx} {A : ty} (a : Γ₁ ≡ Γ₂)
+    (b : Δ₁ ≡ Δ₂) (t : tm Δ₁ A) (σ : tms Γ₁ Δ₁) →
+    transport (λ i → tm (a i) A) (t ⟦ σ ⟧)
+      ≡ transport (λ i → tm (b i) A) t ⟦ transport (λ i → tms (a i) (b i)) σ ⟧
+  transp⟦⟧ {Γ₁} {Γ₂} {Δ₁} {Δ₂} {A} a b t σ =
+    J (λ Γ₂ a → transport (λ i → tm (a i) A) (t ⟦ σ ⟧)
+      ≡ transport (λ i → tm (b i) A) t ⟦ transport (λ i → tms (a i) (b i)) σ ⟧)
+      (J (λ Δ₂ b → transport (λ i → tm Γ₁ A) (t ⟦ σ ⟧) ≡
+        transport (λ i → tm (b i) A) t ⟦ transport (λ i → tms Γ₁ (b i)) σ ⟧)
+        (transportRefl (t ⟦ σ ⟧) ∙ (λ i → transportRefl t (~ i) ⟦ transportRefl σ (~ i) ⟧))
+        b) a
+
 𝑎𝑚𝑏Cat 𝒞 = Contextual.ambCat 𝒞
 isCat𝐴𝑚𝑏Cat 𝒞 = Contextual.isCatAmbCat 𝒞
 
@@ -336,6 +355,14 @@ record ContextualFunctor (𝒞 : Contextual ℓ₁ ℓ₂) (𝒟 : Contextual �
     D.makeVar (tr𝑉𝑎𝑟 CF-ty v)
       ∎
 
+  transpCF-tm : {Γ : C.ctx} {A B : C.ty} (a : A ≡ B) (t : C.tm Γ A) →
+    transport (λ i → D.tm (CF-ctx Γ) (CF-ty (a i))) (CF-tm t)
+      ≡ CF-tm (transport (λ i → C.tm Γ (a i)) t)
+  transpCF-tm {Γ} a t =
+    J (λ B a → transport (λ i → D.tm (CF-ctx Γ) (CF-ty (a i))) (CF-tm t)
+      ≡ CF-tm (transport (λ i → C.tm Γ (a i)) t))
+      (transportRefl (CF-tm t) ∙ ap CF-tm (transportRefl t ⁻¹)) a
+
   open Functor
 
   -- A contextual functor induces a functor between the ambient categories
@@ -349,28 +376,7 @@ record ContextualFunctor (𝒞 : Contextual ℓ₁ ℓ₂) (𝒟 : Contextual �
 open Contextual
 open ContextualFunctor
 
-module _ {𝒞 : Contextual ℓ₁ ℓ₂} where
-  private
-    module C = Contextual 𝒞
-
-  transpId : {Δ Σ : C.ctx} (a : Δ ≡ Σ) →
-    transport (λ i → C.tms (a i) (a i)) (C.𝒾𝒹 Δ) ≡ C.𝒾𝒹 Σ
-  transpId {Δ} {Σ} a =
-    J (λ Σ a → transport (λ i → C.tms (a i) (a i)) (C.𝒾𝒹 Δ) ≡ C.𝒾𝒹 Σ)
-      (transportRefl (C.𝒾𝒹 Δ)) a
-
-  transp⟦⟧ : {Γ₁ Γ₂ Δ₁ Δ₂ : C.ctx} {A : C.ty} (a : Γ₁ ≡ Γ₂)
-    (b : Δ₁ ≡ Δ₂) (t : C.tm Δ₁ A) (σ : C.tms Γ₁ Δ₁) →
-    transport (λ i → C.tm (a i) A) (t C.⟦ σ ⟧)
-      ≡ transport (λ i → C.tm (b i) A) t C.⟦ transport (λ i → C.tms (a i) (b i)) σ ⟧
-  transp⟦⟧ {Γ₁} {Γ₂} {Δ₁} {Δ₂} {A} a b t σ =
-    J (λ Γ₂ a → transport (λ i → C.tm (a i) A) (t C.⟦ σ ⟧)
-      ≡ transport (λ i → C.tm (b i) A) t C.⟦ transport (λ i → C.tms (a i) (b i)) σ ⟧)
-      (J (λ Δ₂ b → transport (λ i → C.tm Γ₁ A) (t C.⟦ σ ⟧) ≡
-        transport (λ i → C.tm (b i) A) t C.⟦ transport (λ i → C.tms Γ₁ (b i)) σ ⟧)
-        (transportRefl (t C.⟦ σ ⟧) ∙ (λ i → transportRefl t (~ i) C.⟦ transportRefl σ (~ i) ⟧))
-        b) a
-
+-- We define the identity CF and composition of CFs
 
 idCF : (𝒞 : Contextual ℓ₁ ℓ₂) → ContextualFunctor 𝒞 𝒞
 CF-ty (idCF 𝒞) A = A
@@ -379,12 +385,12 @@ CF-id (idCF 𝒞) {Γ} =
   map𝑇𝑚𝑠₁ (λ {A} t → transport (λ i → tm 𝒞 (map𝐶𝑡𝑥id Γ (~ i)) A) t) (𝒾𝒹 𝒞 Γ)
     ≡⟨ map𝑇𝑚𝑠₁id (𝒾𝒹 𝒞 Γ) ⟩
   transport (λ i → 𝑇𝑚𝑠 (tm 𝒞) (map𝐶𝑡𝑥id Γ (~ i)) (map𝐶𝑡𝑥id Γ (~ i))) (𝒾𝒹 𝒞 Γ)
-    ≡⟨ transpId {𝒞 = 𝒞} (map𝐶𝑡𝑥id Γ ⁻¹) ⟩
+    ≡⟨ transp𝒾𝒹 𝒞 (map𝐶𝑡𝑥id Γ ⁻¹) ⟩
   𝒾𝒹 𝒞 (map𝐶𝑡𝑥 (λ A → A) Γ)
     ∎
 CF-sub (idCF 𝒞) {Γ} {Δ} {A} t σ =
   transport (λ i → C.tm (map𝐶𝑡𝑥id Γ (~ i)) A) (t C.⟦ σ ⟧)
-    ≡⟨ transp⟦⟧ {𝒞 = 𝒞} (map𝐶𝑡𝑥id Γ ⁻¹) (map𝐶𝑡𝑥id Δ ⁻¹) t σ ⟩
+    ≡⟨ C.transp⟦⟧ (map𝐶𝑡𝑥id Γ ⁻¹) (map𝐶𝑡𝑥id Δ ⁻¹) t σ ⟩
   transport (λ i → C.tm (map𝐶𝑡𝑥id Δ (~ i)) A) t
     C.⟦ transport (λ i → C.tms (map𝐶𝑡𝑥id Γ (~ i)) (map𝐶𝑡𝑥id Δ (~ i))) σ ⟧
     ≡⟨ (λ i → transport (λ i → C.tm (map𝐶𝑡𝑥id Δ (~ i)) A) t C.⟦ map𝑇𝑚𝑠₁id σ (~ i) ⟧) ⟩
@@ -416,7 +422,7 @@ CF-id (_∘CF_ {𝒞 = 𝒞} {𝒟} {ℰ} G F) {Γ} =
       (map𝐶𝑡𝑥comp (CF-ty G) (CF-ty F) Γ i)) (CF-id G i)) ⟩
   transport (λ i → tms ℰ (map𝐶𝑡𝑥comp (CF-ty G) (CF-ty F) Γ i) (map𝐶𝑡𝑥comp (CF-ty G) (CF-ty F) Γ i))
     (𝒾𝒹 ℰ (CF-ctx G (CF-ctx F Γ)))
-    ≡⟨ transpId {𝒞 = ℰ} (map𝐶𝑡𝑥comp (CF-ty G) (CF-ty F) Γ) ⟩
+    ≡⟨ transp𝒾𝒹 ℰ (map𝐶𝑡𝑥comp (CF-ty G) (CF-ty F) Γ) ⟩
   𝒾𝒹 ℰ (map𝐶𝑡𝑥 (CF-ty G ∘ CF-ty F) Γ)
     ∎   
 CF-sub (_∘CF_ {𝒞 = 𝒞} {𝒟} {ℰ} G F) {Γ} {Δ} {A} t σ =
@@ -430,7 +436,7 @@ CF-sub (_∘CF_ {𝒞 = 𝒞} {𝒟} {ℰ} G F) {Γ} {Δ} {A} t σ =
       (CF-sub G (CF-tm F t) (CF-tms F σ) i)) ⟩
   transport (λ i → tm ℰ (map𝐶𝑡𝑥comp (CF-ty G) (CF-ty F) Γ i) (CF-ty G (CF-ty F A)))
     (CF-tm G (CF-tm F t) E.⟦ CF-tms G (CF-tms F σ) ⟧)
-    ≡⟨ transp⟦⟧ {𝒞 = ℰ} (map𝐶𝑡𝑥comp (CF-ty G) (CF-ty F) Γ) (map𝐶𝑡𝑥comp (CF-ty G) (CF-ty F) Δ)
+    ≡⟨ E.transp⟦⟧ (map𝐶𝑡𝑥comp (CF-ty G) (CF-ty F) Γ) (map𝐶𝑡𝑥comp (CF-ty G) (CF-ty F) Δ)
       (CF-tm G (CF-tm F t)) (CF-tms G (CF-tms F σ)) ⟩
   transport (λ i → E.tm (map𝐶𝑡𝑥comp (CF-ty G) (CF-ty F) Δ i) (CF-ty G (CF-ty F A)))
     (CF-tm G (CF-tm F t)) E.⟦ transport (λ i → E.tms (map𝐶𝑡𝑥comp (CF-ty G) (CF-ty F) Γ i)
