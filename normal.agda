@@ -2,8 +2,10 @@
 
 module normal where
 
+open import lists
 open import contextual
 open import ccc
+open import psh
 
 open import Cubical.Data.Nat renaming (zero to Z; suc to S) hiding (elim)
 open import Cubical.Categories.Category
@@ -11,45 +13,29 @@ open import Cubical.Categories.Functor
 
 private
   variable
-    ℓ₁ ℓ₂ : Level
+    ℓ : Level
 
 -- We define normal and neutral terms
 
-module Normal (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ 𝒞CCC : CCC 𝒞 ⦄ (base : Char → Contextual.ty 𝒞) where
+module Normal (𝒞 : Contextual ℓ ℓ) ⦃ 𝒞CCC : CCC 𝒞 ⦄
+              {X : Type ℓ} (base : X → Contextual.ty 𝒞) where
   open Contextual 𝒞
   open CCC 𝒞CCC
+  open Presheaf REN
 
   private
     module R = Contextual ρεν
 
-  data Nf : (Γ : ctx) (A : ty) → Type ℓ₁
+  data Ne : (Γ : ctx) (A : ty) → Type ℓ
+  data Nf : (Γ : ctx) (A : ty) → Type ℓ
 
-  data Ne : (Γ : ctx) (A : ty) → Type ℓ₁ where
+  data Ne where
     VN : {Γ : ctx} {A : ty} → IntVar Γ A → Ne Γ A
     APP : {Γ : ctx} {A B : ty} → Ne Γ (A ⇛ B) → Nf Γ A → Ne Γ B
 
   data Nf where
-    NEU : {Γ : ctx} {c : Char} → Ne Γ (base c) → Nf Γ (base c)
+    NEU : {Γ : ctx} {x : X} → Ne Γ (base x) → Nf Γ (base x)
     LAM : {Γ : ctx} {A B : ty} → Nf (Γ ⊹ A) B → Nf Γ (A ⇛ B)
-
-  insertCtx : (Γ : ctx) (A : ty) (n : ℕ) → ctx
-  insertCtx Γ A Z = Γ ⊹ A
-  insertCtx ∅ A (S n) = ∅ ⊹ A
-  insertCtx (Γ ⊹ B) A (S n) = insertCtx Γ A n ⊹ B
-
-  SVar : {Γ : ctx} {A B : ty} (n : ℕ) → IntVar Γ A → IntVar (insertCtx Γ B n) A
-  SNe : {Γ : ctx} {A B : ty} (n : ℕ) → Ne Γ A → Ne (insertCtx Γ B n) A
-  SNf : {Γ : ctx} {A B : ty} (n : ℕ) → Nf Γ A → Nf (insertCtx Γ B n) A
-
-  SVar Z v = 𝑠𝑣 v
-  SVar (S n) 𝑧𝑣 = 𝑧𝑣
-  SVar (S n) (𝑠𝑣 v) = 𝑠𝑣 (SVar n v)
-
-  SNe n (VN v) = VN (SVar n v)
-  SNe n (APP M N) = APP (SNe n M) (SNf n N)
-
-  SNf n (NEU M) = NEU (SNe n M)
-  SNf n (LAM N) = LAM (SNf (S n) N)
 
   infix 30 _[_]NE _[_]NF
   _[_]NE : {Γ Δ : ctx} {A : ty} → Ne Δ A → IntRen Γ Δ → Ne Γ A
@@ -130,8 +116,69 @@ module Normal (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ 𝒞CCC : CCC 𝒞 ⦄ (base
     Λ (ιNf (N [ W₂𝑅𝑒𝑛 A σ ]NF))
       ≡⟨ ap Λ (ιNfLem N (W₂𝑅𝑒𝑛 A σ)) ⟩
     Λ (ιNf N ⟦ makeRen (W₂𝑅𝑒𝑛 A σ) ⟧)
-      ≡⟨ (λ i → Λ (ιNf N ⟦ makeW₁ σ i ⊕ 𝑧 ⟧)) ⟩
+      ≡⟨ (λ i → Λ (ιNf N ⟦ makeW σ i ⊕ 𝑧 ⟧)) ⟩
     Λ (ιNf N ⟦ W₂tms A (makeRen σ) ⟧)
       ≡⟨ Λnat (ιNf N) (makeRen σ) ⁻¹ ⟩
     Λ (ιNf N) ⟦ makeRen σ ⟧
       ∎
+
+  Nes = 𝑇𝑚𝑠 Ne
+  Nfs = 𝑇𝑚𝑠 Nf
+
+  _[_]NFS : {Γ Δ Σ : ctx} → Nfs Δ Σ → IntRen Γ Δ → Nfs Γ Σ
+  NS [ σ ]NFS = map𝐸𝑙𝑠 _[ σ ]NF NS
+
+  ιNes : {Γ Δ : ctx} → Nes Γ Δ → tms Γ Δ
+  ιNes = map𝐸𝑙𝑠 ιNe
+
+  ιNfs : {Γ Δ : ctx} → Nfs Γ Δ → tms Γ Δ
+  ιNfs = map𝐸𝑙𝑠 ιNf
+
+  ιNfsLem : {Γ Δ Σ : ctx} (NS : Nfs Δ Σ) (σ : IntRen Γ Δ) →
+    ιNfs (NS [ σ ]NFS) ≡ ιNfs NS ⊚ (makeRen σ)
+  ιNfsLem ! σ = refl
+  ιNfsLem (NS ⊕ N) σ i = ιNfsLem NS σ i ⊕ ιNfLem N σ i
+
+  idNes : (Γ : ctx) → Nes Γ Γ
+  idNes Γ = map𝐸𝑙𝑠 VN (id𝑅𝑒𝑛 Γ)
+
+  ιIdNes : (Γ : ctx) → ιNes (idNes Γ) ≡ 𝒾𝒹 Γ
+  ιIdNes Γ =
+    map𝐸𝑙𝑠 ιNe (map𝐸𝑙𝑠 VN (id𝑅𝑒𝑛 Γ))
+      ≡⟨ map𝐸𝑙𝑠comp ιNe VN (id𝑅𝑒𝑛 Γ) ⟩
+    makeRen (id𝑅𝑒𝑛 Γ)
+      ≡⟨ 𝒾𝒹η₂ ⟩
+    𝒾𝒹 Γ
+      ∎
+
+  open PSh
+  open PShMorCart
+
+  TM : (A : ty) → PSh
+  sec (TM A) Γ = tm Γ A
+  isSetSec (TM A) = isSetTm
+  hom (TM A) σ t = t ⟦ makeRen σ ⟧
+  id-hom (TM A) t = ap (t ⟦_⟧) 𝒾𝒹η₂ ∙ 𝒾𝒹⟦⟧ t
+  ⊚-hom (TM A) σ τ t = ap (t ⟦_⟧) (make∘𝑅𝑒𝑛 σ τ) ∙ ⟦⟧⟦⟧ t (makeRen σ) (makeRen τ) ⁻¹
+
+  NE : ty → PSh
+  sec (NE A) Γ = Ne Γ A
+  isSetSec (NE A) = isSetNeutral
+  hom (NE A) σ M = M [ σ ]NE
+  id-hom (NE A) = [id]NE
+  ⊚-hom (NE A) σ τ M = [][]NE M σ τ ⁻¹
+
+  NF : ty → PSh
+  sec (NF A) Γ = Nf Γ A
+  isSetSec (NF A) = isSetNormal
+  hom (NF A) σ N = N [ σ ]NF
+  id-hom (NF A) = [id]NF
+  ⊚-hom (NF A) σ τ N = [][]NF N σ τ ⁻¹
+
+  ιNE : (A : ty) → PShMorCart (NE A) (TM A)
+  ob (ιNE A) = ιNe
+  nat (ιNE A) σ M = ιNeLem M σ
+
+  ιNF : (A : ty) → PShMorCart (NF A) (TM A)
+  ob (ιNF A) = ιNf
+  nat (ιNF A) σ N = ιNfLem N σ

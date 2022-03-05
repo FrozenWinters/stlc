@@ -2,6 +2,7 @@
 
 module syn where
 
+open import lists
 open import contextual
 open import ccc
 
@@ -10,16 +11,16 @@ open import Cubical.Categories.Category
 -- Here, we give a construction of the syntactic category. This defines the terms
 -- that we will be normalising, as well as the rules by which we will do so.
 
-module Syn where
+module Syn {ℓ} (X : Type ℓ) where
   infixr 20 _⇒_
-  data Ty : Type where
-    Base : Char → Ty
+  data Ty : Type ℓ where
+    Base : X → Ty
     _⇒_ : Ty → Ty → Ty
 
   module _ where
     open Contextual
 
-    𝑟𝑒𝑛 : Contextual lzero lzero
+    𝑟𝑒𝑛 : Contextual ℓ ℓ
     ty 𝑟𝑒𝑛 = Ty
     tm 𝑟𝑒𝑛 = 𝑉𝑎𝑟 Ty
     _⟦_⟧ 𝑟𝑒𝑛 = _[_]𝑅
@@ -35,7 +36,7 @@ module Syn where
   Var = 𝑉𝑎𝑟 Ty
   Ren = 𝑅𝑒𝑛 Ty
 
-  data Tm : Ctx → Ty → Type
+  data Tm : Ctx → Ty → Type ℓ
   Tms = 𝑇𝑚𝑠 Tm
 
   infixl 20 _∘Tms_
@@ -74,9 +75,9 @@ module Syn where
 
     trunc : {Γ : Ctx} {A : Ty} → isSet (Tm Γ A)
 
-  σ ∘Tms τ = map𝑇𝑚𝑠 _[ τ ] σ
+  σ ∘Tms τ = map𝐸𝑙𝑠 _[ τ ] σ
 
-  varify σ = map𝑇𝑚𝑠 V σ
+  varify σ = map𝐸𝑙𝑠 V σ
 
   idTms Γ = varify (𝒾𝒹 Γ)
 
@@ -356,23 +357,22 @@ module Syn where
       (λ k → [id] (q k))
       (λ k → [id] t)
       (λ k → [id] s) i j
-
-module _ where
-  open Contextual
+     
+  private
+    module C = Contextual
   open CCC
-  open Syn
 
   -- Finally we define the contextual cateogy σιν and its ambient category SYN
 
-  σιν : Contextual lzero lzero
-  ty σιν = Ty
-  tm σιν = Tm
-  _⟦_⟧ σιν = _[_]
-  𝒾𝒹 σιν = idTms
-  𝒾𝒹L σιν = ∘TmsIdL
-  𝒾𝒹⟦⟧ σιν = [id]
-  ⟦⟧⟦⟧ σιν = [][]
-  isSetTm σιν = trunc
+  σιν : Contextual ℓ ℓ
+  C.ty σιν = Ty
+  C.tm σιν = Tm
+  C._⟦_⟧ σιν = _[_]
+  C.𝒾𝒹 σιν = idTms
+  C.𝒾𝒹L σιν = ∘TmsIdL
+  C.𝒾𝒹⟦⟧ σιν = [id]
+  C.⟦⟧⟦⟧ σιν = [][]
+  C.isSetTm σιν = trunc
 
   instance
     σινCCC : CCC σιν
@@ -382,10 +382,3 @@ module _ where
     Λnat σινCCC = Lam[]
     𝑎𝑝𝑝β σινCCC = β
     𝑎𝑝𝑝η σινCCC = η
-
-  SYN : Precategory lzero lzero
-  SYN = ambCat σιν
-
-  instance
-    isCatSyn : isCategory SYN
-    isCatSyn .isSetHom = isSetTms σιν

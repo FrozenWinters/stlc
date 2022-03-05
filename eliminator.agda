@@ -2,8 +2,10 @@
 
 module eliminator where
 
+open import lists
 open import contextual
 open import ccc
+open import functor
 open import syn
 
 open import Agda.Builtin.Char
@@ -12,16 +14,17 @@ open import Cubical.Categories.Functor
 
 -- We construct a canonical contextual functor from σιν to any CCC 𝒞
 
-module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 : CCC 𝒞 ⦄
-                  (base : (c : Char) → Contextual.ty 𝒞) where
+module Eliminator {ℓ₁ ℓ₂ ℓ₃} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 : CCC 𝒞 ⦄
+                  {X : Type ℓ₃} (base : X → Contextual.ty 𝒞) where
+  open Syn X
   open Contextual 𝒞
   private
     module S = Contextual σιν
+    module R = Contextual S.ρεν
   open CCC CCC𝒞
-  open Syn
 
   interpTy : Ty → ty
-  interpTy (Base X) = base X
+  interpTy (Base x) = base x
   interpTy (A ⇒ B) = (interpTy A) ⇛ (interpTy B)
 
   interpCtx : Ctx → ctx
@@ -33,12 +36,12 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
   interpVar v = makeVar (tr𝑉𝑎𝑟 interpTy v)
 
   interpRen : {Γ Δ : Ctx} (σ : Ren Γ Δ) → tms (interpCtx Γ) (interpCtx Δ)
-  interpRen = map𝑇𝑚𝑠₁ interpVar
+  interpRen = map𝐸𝑙𝑠₁ interpVar
 
   interpIdRen : {Γ : Ctx} → interpRen (id𝑅𝑒𝑛 Γ) ≡ 𝒾𝒹 (interpCtx Γ)
   interpIdRen {Γ} =
-    map𝑇𝑚𝑠₁ (λ v → makeVar (tr𝑉𝑎𝑟 interpTy v)) (id𝑅𝑒𝑛 Γ)
-      ≡⟨ map𝑇𝑚𝑠comp₂ makeVar (tr𝑉𝑎𝑟 interpTy) (id𝑅𝑒𝑛 Γ) ⁻¹ ⟩
+    map𝐸𝑙𝑠₁ (λ v → makeVar (tr𝑉𝑎𝑟 interpTy v)) (id𝑅𝑒𝑛 Γ)
+      ≡⟨ map𝐸𝑙𝑠comp₂ makeVar (tr𝑉𝑎𝑟 interpTy) (id𝑅𝑒𝑛 Γ) ⁻¹ ⟩
     makeRen (tr𝑅𝑒𝑛 interpTy (id𝑅𝑒𝑛 Γ))
       ≡⟨ (λ i → makeRen (trId interpTy Γ i)) ⟩
     makeRen (id𝑅𝑒𝑛 (map𝐶𝑡𝑥 interpTy Γ))
@@ -66,7 +69,7 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
 
   {-# TERMINATING #-}
   interpTms : {Γ Δ : Ctx} (σ : Tms Γ Δ) → tms  (interpCtx Γ)  (interpCtx Δ)
-  interpTms = map𝑇𝑚𝑠₁ interpTm
+  interpTms = map𝐸𝑙𝑠₁ interpTm
 
   interpVarify : {Γ Δ : Ctx} (σ : Ren Γ Δ) →
     interpTms (varify σ) ≡ interpRen σ
@@ -130,9 +133,9 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
     Λ (𝑎𝑝𝑝 (interpTm (t [ S.π ])) 𝑧)
       ∎) i
   interpTm (𝑧𝑣[] σ t i) =
-    𝑧β (interpTms (σ ⊕ t)) i
+    𝑧⟦⟧ (interpTms (σ ⊕ t)) i
   interpTm (𝑠𝑣[] v σ t i) =
-    W₁⟦⟧ (tr𝑉𝑎𝑟 interpTy v) (interpTms σ) (interpTm t) i
+    𝑠𝑣⟦⟧ (tr𝑉𝑎𝑟 interpTy v) (interpTms σ) (interpTm t) i
   interpTm (Lam[] {A = A} t σ i) =
     (Λ (interpTm t) ⟦ interpTms σ ⟧
       ≡⟨ Λnat (interpTm t) (interpTms σ) ⟩
@@ -179,8 +182,8 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
   pres-𝐴𝑝𝑝 CCCPres {Γ} {A} {B} t i =
     𝑎𝑝𝑝 (transportRefl (interpTm t) (~ i) ⟦ πlemTms {Γ} {A} i ⟧) 𝑧
 
-  BasePreserving : ContextualFunctor σιν 𝒞 → Type ℓ₁
-  BasePreserving F = (c : Char) → CF-ty F (Base c) ≡ base c
+  BasePreserving : ContextualFunctor σιν 𝒞 → Type (ℓ₁ ⊔ ℓ₃)
+  BasePreserving F = (x : X) → CF-ty F (Base x) ≡ base x
 
   BasePres : BasePreserving elim
   BasePres c = refl
@@ -235,7 +238,7 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
 
     UP-tm' {Γ} {A} (V v) =
       (CF-tm F (V v)
-        ≡⟨ (λ i → CF-tm F (V (makeRenVar σιν v (~ i)))) ⟩
+        ≡⟨ (λ i → CF-tm F (V (R.𝒾𝒹⟦⟧ v (~ i)))) ⟩
       CF-tm F (V (derive (id𝑅𝑒𝑛 Γ) v))
         ≡⟨ ap (CF-tm F) (deriveMap V (id𝑅𝑒𝑛 Γ) v ⁻¹) ⟩
       CF-tm F (S.makeVar v)
@@ -336,18 +339,19 @@ module Eliminator {ℓ₁ ℓ₂} (𝒞 : Contextual ℓ₁ ℓ₂) ⦃ CCC𝒞 
       isSet→SquareP (λ i j → isSetTms)
         (CF-id F)
         interpId
-        (λ k → map𝑇𝑚𝑠₁ (UP-tm k) (idTms Γ))
+        (λ k → map𝐸𝑙𝑠₁ (UP-tm k) (idTms Γ))
         (λ k → 𝒾𝒹 (map𝐶𝑡𝑥 (UP-ty k) Γ)) i
     CF-sub (UP i) t σ =
       isSet→SquareP (λ i j → isSetTm)
         (CF-sub F t σ)
         (λ k → interpTm t ⟦ interpTms σ ⟧)
         (λ k → UP-tm k (t [ σ ]))
-        (λ k → UP-tm k t ⟦ map𝑇𝑚𝑠₁ (UP-tm k) σ ⟧) i
+        (λ k → UP-tm k t ⟦ map𝐸𝑙𝑠₁ (UP-tm k) σ ⟧) i
 
-open Syn
+module Initial {ℓ} (X : Type ℓ) where
+  open Syn X
 
-σινInitial : InitialCCC σιν (λ c → Base c)
-σινInitial 𝒟 base = initIn elim CCCPres BasePres (λ F p₁ p₂ → UP.UP p₁ p₂)
-  where
-    open Eliminator 𝒟 base
+  σινInitial : InitialCCC σιν (λ c → Base c)
+  σινInitial 𝒟 base = initIn elim CCCPres BasePres (λ F p₁ p₂ → UP.UP p₁ p₂)
+    where
+      open Eliminator 𝒟 base

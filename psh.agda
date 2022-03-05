@@ -1,270 +1,457 @@
-{-# OPTIONS --cubical #-}
+{-# OPTIONS --cubical --allow-unsolved-metas #-}
 
 module psh where
 
+open import lists
 open import contextual
 open import ccc
-open import cart
 
 open import Cubical.Data.Sigma
-open import Cubical.Data.Unit as ⊤ renaming (Unit to ⊤)
-open import Cubical.Categories.Category
-open import Cubical.Categories.Functor
-open import Cubical.Categories.Instances.Sets hiding (isSetLift)
 
--- In this file, we exhibit the Cartesian Closed structure of presheaves
+module Presheaf {ℓ : Level} (𝒞 : Category ℓ ℓ) where
+  open Category 𝒞
 
-private
-  isSetLift : ∀ {ℓ₁ ℓ₂} {A : Set ℓ₁} → isSet A → isSet (Lift {ℓ₁} {ℓ₂} A)
-  isSetLift p (lift x) (lift y) a b = ap (ap lift) (p x y (ap lower a) (ap lower b))
+  record PSh : Type (lsuc ℓ) where
+    field
+      sec : 𝑜𝑏 → Type ℓ
+      isSetSec : {A : 𝑜𝑏} → isSet (sec A)
+      hom : {A B : 𝑜𝑏} → 𝑚𝑜𝑟 A B → sec B → sec A
+      id-hom : {A : 𝑜𝑏} (𝓈 : sec A) →
+        hom (𝒾𝒹 A) 𝓈 ≡ 𝓈
+      ⊚-hom : {A B C : 𝑜𝑏} (f : 𝑚𝑜𝑟 B C) (g : 𝑚𝑜𝑟 A B) (𝓈 : sec C) →
+        hom (f ⊚ g) 𝓈 ≡ hom g (hom f 𝓈)
 
-  isSet→ : ∀ {ℓ₁ ℓ₂} (A : Set ℓ₁) {B : Set ℓ₂} → isSet B → isSet (A → B)
-  isSet→ A p f g α β i j x = p (f x) (g x) (λ k → α k x) (λ k → β k x) i j
+  open PSh
 
--- First we establish some easy structure of SET
+  PShs = 𝐶𝑡𝑥 PSh
 
-module SETCartesian {ℓ : Level} where
-  open Precategory
+  secs : PShs → 𝑜𝑏 → Type (lsuc ℓ)
+  secs γ A = 𝐸𝑙𝑠 (λ α → sec α A) γ
 
-  1SET : ob (SET ℓ)
-  1SET = Lift ⊤ , isSetLift isSetUnit
+  homs : (γ : PShs) {A B : 𝑜𝑏} → 𝑚𝑜𝑟 A B → secs γ B → secs γ A
+  homs γ f 𝓈s = map𝐸𝑙𝑠 (λ {α} → hom α f) 𝓈s
 
-  infixl 20 _×SET_
-  _×SET_ : (A B : ob (SET ℓ)) → ob (SET ℓ)
-  (A , p) ×SET (B , q) = (A × B) , isSet× p q
+  id-homs : (γ : PShs) {A : 𝑜𝑏} (𝓈s : secs γ A) →
+    homs γ (𝒾𝒹 A) 𝓈s ≡ 𝓈s
+  id-homs ∅ ! = refl
+  id-homs (γ ⊹ α) (𝓈s ⊕ 𝓈) i = id-homs γ 𝓈s i ⊕ id-hom α 𝓈 i
 
-  infixl 15 _⇒SET_
-  _⇒SET_ : (A B : ob (SET ℓ)) → ob (SET ℓ)
-  (A , _) ⇒SET (B , q) = (A → B) , isSet→ A q
+  ⊚-homs : (γ : PShs) {A B C : 𝑜𝑏} (f : 𝑚𝑜𝑟 B C) (g : 𝑚𝑜𝑟 A B) (𝓈s : secs γ C) →
+    homs γ (f ⊚ g) 𝓈s ≡ homs γ g (homs γ f 𝓈s)
+  ⊚-homs ∅ f g ! = refl
+  ⊚-homs (γ ⊹ α) f g (𝓈s ⊕ 𝓈) i = ⊚-homs γ f g 𝓈s i ⊕ ⊚-hom α f g 𝓈 i
 
--- Onto presheaves
+  record PShMor (γ : PShs) (α : PSh) : Type (lsuc ℓ) where
+    field
+      ob : {A : 𝑜𝑏} → secs γ A → sec α A
+      nat : {A B : 𝑜𝑏} (f : 𝑚𝑜𝑟 A B) (𝓈s : secs γ B) →
+        ob (homs γ f 𝓈s) ≡ hom α f (ob 𝓈s)
 
-module _ where
-  open import Cubical.Categories.Presheaf
+  open PShMor
 
-  PSh : ∀ {ℓ} (𝒞 : Precategory ℓ ℓ) → ⦃ isCategory 𝒞 ⦄ → Precategory (lsuc ℓ) ℓ
-  PSh {ℓ} 𝒞  = PreShv 𝒞 ℓ
+  ≡PShMor : {γ : PShs} {α : PSh} {t s : PShMor γ α} →
+    ({A : 𝑜𝑏} (𝓈s : secs γ A) → ob t 𝓈s ≡ ob s 𝓈s) → t ≡ s
+  ob (≡PShMor p i) 𝓈s = p 𝓈s i
+  nat (≡PShMor {γ} {α} {t} {s} p i) f 𝓈s j =
+    isSet→SquareP (λ i j → isSetSec α)
+      (nat t f 𝓈s)
+      (nat s f 𝓈s)
+      (p (homs γ f 𝓈s))
+      (λ k → hom α f (p 𝓈s k)) i j
 
-module PShCartesian {ℓ : Level} (𝒞 : Precategory ℓ ℓ) ⦃ C-cat : isCategory 𝒞 ⦄ where
-  open import Cubical.Categories.NaturalTransformation
-  open Precategory
-  open Functor
-  open NatTrans
-  open SETCartesian
-  open import Cubical.Categories.Presheaf
+  PShMors = 𝑇𝑚𝑠 PShMor
 
+  obs : {γ δ : PShs} → PShMors γ δ → {A : 𝑜𝑏} → secs γ A → secs δ A
+  obs ! 𝓈s = !
+  obs (σ ⊕ t) 𝓈s = obs σ 𝓈s ⊕ ob t 𝓈s
+
+  nats : {γ δ : PShs} (σ : PShMors γ δ) {A B : 𝑜𝑏} (f : 𝑚𝑜𝑟 A B) (𝓈s : secs γ B) →
+    obs σ (homs γ f 𝓈s) ≡ homs δ f (obs σ 𝓈s)
+  nats ! f 𝓈s = refl
+  nats (σ ⊕ t) f 𝓈s i = nats σ f 𝓈s i ⊕ nat t f 𝓈s i
+
+  infixl 30 _[_]PSh
+  _[_]PSh : {γ δ : PShs} {α : PSh} → PShMor δ α → PShMors γ δ → PShMor γ α
+  ob (t [ σ ]PSh) 𝓈s = ob t (obs σ 𝓈s)
+  nat (_[_]PSh {γ} {δ} {α} t σ) f 𝓈s =
+    ob t (obs σ (homs γ f 𝓈s))
+      ≡⟨ ap (ob t) (nats σ f 𝓈s) ⟩
+    ob t (homs δ f (obs σ 𝓈s))
+      ≡⟨ nat t f (obs σ 𝓈s) ⟩
+    hom α f (ob t (obs σ 𝓈s))
+      ∎
+
+  _∘PSh_ : {γ δ ε : PShs} → PShMors δ ε → PShMors γ δ → PShMors γ ε
+  σ ∘PSh τ = map𝐸𝑙𝑠 _[ τ ]PSh σ
+
+  obs∘PSh : {γ δ ε : PShs} (σ : PShMors δ ε) (τ : PShMors γ δ) {A : 𝑜𝑏} (𝓈s : secs γ A) →
+    obs (σ ∘PSh τ) 𝓈s ≡ obs σ (obs τ 𝓈s)
+  obs∘PSh ! τ 𝓈s = refl
+  obs∘PSh (σ ⊕ t) τ 𝓈s i = obs∘PSh σ τ 𝓈s i ⊕ ob t (obs τ 𝓈s)
+
+  [][]PSh : {γ δ ε : PShs} {α : PSh} (t : PShMor ε α) (σ : PShMors δ ε) (τ : PShMors γ δ) →
+    t [ σ ]PSh [ τ ]PSh ≡ t [ σ ∘PSh τ ]PSh
+  [][]PSh t σ τ = ≡PShMor (λ 𝓈s i → ob t (obs∘PSh σ τ 𝓈s (~ i)))
+
+  𝑧PSh : {γ : PShs} {α : PSh} → PShMor (γ ⊹ α) α
+  ob 𝑧PSh (𝓈s ⊕ 𝓈) = 𝓈
+  nat 𝑧PSh f (𝓈s ⊕ 𝓈) = refl
+
+  W₁PSh : {γ : PShs} (α : PSh) {β : PSh} → PShMor γ β → PShMor (γ ⊹ α) β
+  ob (W₁PSh α t) (𝓈s ⊕ 𝓈) = ob t 𝓈s
+  nat (W₁PSh α t) f (𝓈s ⊕ 𝓈) = nat t f 𝓈s
+
+  W₁PShs : {γ δ : PShs} (α : PSh) → PShMors γ δ → PShMors (γ ⊹ α) δ
+  W₁PShs α σ = map𝐸𝑙𝑠 (W₁PSh α) σ
+
+  W₂PShs : {γ δ : PShs} (α : PSh) → PShMors γ δ → PShMors (γ ⊹ α) (δ ⊹ α)
+  W₂PShs α σ = W₁PShs α σ ⊕ 𝑧PSh
+
+  idPSh : (γ : PShs) → PShMors γ γ
+  idPSh ∅ = !
+  idPSh (γ ⊹ α) = W₂PShs α (idPSh γ)
+
+  obsW : {γ δ : PShs} (α : PSh) {A : 𝑜𝑏} (σ : PShMors γ δ) (𝓈s : secs γ A) (𝓈 : sec α A) →
+    obs (W₁PShs α σ) (𝓈s ⊕ 𝓈) ≡ obs σ 𝓈s
+  obsW α ! 𝓈s 𝓈 = refl
+  obsW α (σ ⊕ t) 𝓈s 𝓈 i = obsW α σ 𝓈s 𝓈 i ⊕ ob t 𝓈s 
+
+  obsId : {γ : PShs} {A : 𝑜𝑏} (𝓈s : secs γ A) → obs (idPSh γ) 𝓈s ≡ 𝓈s
+  obsId ! = refl
+  obsId {γ = γ ⊹ α} (𝓈s ⊕ 𝓈) =
+    obs (W₁PShs α (idPSh γ)) (𝓈s ⊕ 𝓈) ⊕ 𝓈
+      ≡⟨ (λ i → obsW α (idPSh γ) 𝓈s 𝓈 i ⊕ 𝓈) ⟩
+    obs (idPSh γ) 𝓈s ⊕ 𝓈
+      ≡⟨ (λ i → obsId 𝓈s i ⊕ 𝓈) ⟩
+    𝓈s ⊕ 𝓈
+      ∎
+
+  WPShLem1 : {γ δ : PShs} {α β : PSh} (t : PShMor δ β) (τ : PShMors γ δ) (s : PShMor γ α) →
+    W₁PSh α t [ τ ⊕ s ]PSh ≡ t [ τ ]PSh
+  WPShLem1 σ τ t = ≡PShMor (λ 𝓈s → refl)
+
+  WPShLem2 : {γ δ ε : PShs} {α : PSh} (σ : PShMors δ ε) (τ : PShMors γ δ) (s : PShMor γ α) →
+    W₁PShs α σ ∘PSh (τ ⊕ s) ≡ σ ∘PSh τ
+  WPShLem2 ! τ s = refl
+  WPShLem2 (σ ⊕ t) τ s i = WPShLem2 σ τ s i ⊕ WPShLem1 t τ s i
+
+  WPShLem3 : {γ δ : PShs} {α β : PSh} (t : PShMor δ β) (σ : PShMors γ δ) →
+    t [ W₁PShs α σ ]PSh ≡ W₁PSh α (t [ σ ]PSh)
+  WPShLem3 {α = α} t σ = ≡PShMor (λ {(𝓈s ⊕ 𝓈) → ap (ob t) (obsW α σ 𝓈s 𝓈)})
+
+  WPShLem4 : {γ δ ε : PShs} {α : PSh} (σ : PShMors δ ε) (τ : PShMors γ δ) →
+    σ ∘PSh W₁PShs α τ ≡ W₁PShs α (σ ∘PSh τ)
+  WPShLem4 ! τ = refl
+  WPShLem4 (σ ⊕ t) τ i = WPShLem4 σ τ i ⊕ WPShLem3 t τ i
+
+  𝑧PShLem : {γ δ : PShs} {α : PSh} (σ : PShMors γ δ) (t : PShMor γ α) →
+    𝑧PSh [ σ ⊕ t ]PSh ≡ t
+  𝑧PShLem σ t = ≡PShMor (λ 𝓈s → refl)
+
+  idLPSh : {γ δ : PShs} (σ : PShMors γ δ) → idPSh δ ∘PSh σ ≡ σ
+  idLPSh ! = refl
+  idLPSh {δ = δ ⊹ α} (σ ⊕ t) =
+    W₂PShs α (idPSh δ) ∘PSh (σ ⊕ t)
+      ≡⟨ (λ i → WPShLem2 (idPSh δ) σ t i ⊕ 𝑧PShLem σ t i) ⟩
+    (idPSh δ ∘PSh σ) ⊕ t
+      ≡⟨ (λ i → idLPSh σ i ⊕ t) ⟩
+    σ ⊕ t
+      ∎
+
+  id[]PSh : {γ : PShs} {α : PSh} (t : PShMor γ α) → t [ idPSh γ ]PSh ≡ t
+  id[]PSh t = ≡PShMor (λ 𝓈s i → ob t (obsId 𝓈s i))
+
+  open Contextual
+
+  𝒫𝒮𝒽 : Contextual (lsuc ℓ) (lsuc ℓ)
+  ty 𝒫𝒮𝒽 = PSh
+  tm 𝒫𝒮𝒽 = PShMor
+  _⟦_⟧ 𝒫𝒮𝒽 = _[_]PSh
+  𝒾𝒹 𝒫𝒮𝒽 = idPSh
+  𝒾𝒹L 𝒫𝒮𝒽 = idLPSh
+  𝒾𝒹⟦⟧ 𝒫𝒮𝒽 = id[]PSh
+  ⟦⟧⟦⟧ 𝒫𝒮𝒽 = [][]PSh
+  isSetTm 𝒫𝒮𝒽 = {!!}
+
+  record PShMorCart (α β : PSh) : Type ℓ where
+    field
+      ob : {A : 𝑜𝑏} → sec α A → sec β A
+      nat : {A B : 𝑜𝑏} (f : 𝑚𝑜𝑟 A B) (𝓈 : sec α B) →
+        ob (hom α f 𝓈) ≡ hom β f (ob 𝓈)
+
+  open PShMorCart
+
+  ≡PShMorCart : {α β : PSh} {t s : PShMorCart α β} →
+    ({A : 𝑜𝑏} (𝓈 : sec α A) → ob t 𝓈 ≡ ob s 𝓈) → t ≡ s
+  ob (≡PShMorCart p i) 𝓈 = p 𝓈 i
+  nat (≡PShMorCart {α} {β} {t} {s} p i) f 𝓈 j =
+    isSet→SquareP (λ i j → isSetSec β)
+      (nat t f 𝓈)
+      (nat s f 𝓈)
+      (p (hom α f 𝓈))
+      (λ k → hom β f (p 𝓈 k)) i j
+
+  isSetPShMorCart : {α β : PSh} → isSet (PShMorCart α β)
+  isSetPShMorCart = {!!}
+
+module PresheafCCC {ℓ : Level} (𝒞 : Category ℓ ℓ) where
+  open Category 𝒞
+  open Presheaf 𝒞
+  
   private
-    C = 𝒞
-    ℐ𝒹 = Precategory.id C
-    _𝒩∘_ = comp' (PSh 𝒞)
-    infixl 15 _★_
-    _★_ = C ._⋆_
+    module P = Contextual 𝒫𝒮𝒽
 
-  よ : ob C → ob (PSh 𝒞)
-  よ = Yoneda.yo C
+  open PSh
+  open PShMor
+  open PShMorCart
 
-  -- Terminal Object
+  よ : 𝑜𝑏 → PSh
+  sec (よ A) B = 𝑚𝑜𝑟 B A
+  isSetSec (よ A) = isSetMor
+  hom (よ A) f g = g ⊚ f
+  id-hom (よ A) f = 𝒾𝒹R f
+  ⊚-hom (よ A) f g h = ⊚Assoc h f g ⁻¹
 
-  1PSh : ob (PSh 𝒞)
-  1PSh .F-ob x = 1SET
-  1PSh .F-hom x t = t
-  1PSh .F-id = refl
-  1PSh .F-seq a b = refl
+  _×PSh_ : PSh → PSh → PSh
+  sec (α ×PSh β) A = sec α A × sec β A
+  isSetSec (α ×PSh β) = isSet× (isSetSec α) (isSetSec β)
+  hom (α ×PSh β) f (𝓈 , 𝓉) = hom α f 𝓈 , hom β f 𝓉
+  id-hom (α ×PSh β) (𝓈 , 𝓉) i = id-hom α 𝓈 i , id-hom β 𝓉 i
+  ⊚-hom (α ×PSh β) f g (𝓈 , 𝓉) i = ⊚-hom α f g 𝓈 i , ⊚-hom β f g 𝓉 i
 
-  !PSh : {F : ob (PSh 𝒞)} → PSh 𝒞 [ F , 1PSh ]
-  !PSh .N-ob x t = lift tt
-  !PSh .N-hom a = refl
+  _⇒PSh_ : PSh → PSh → PSh
+  sec (α ⇒PSh β) A = PShMorCart (よ A ×PSh α) β
+  isSetSec (α ⇒PSh β) = isSetPShMorCart
+  ob (hom (α ⇒PSh β) f t) (g , 𝓈) = ob t (f ⊚ g , 𝓈)
+  nat (hom (α ⇒PSh β) f t) g (h , 𝓈) =
+    ob t (f ⊚ (h ⊚ g) , hom α g 𝓈)
+      ≡⟨ (λ i → ob t (⊚Assoc f h g (~ i) , hom α g 𝓈)) ⟩
+    ob t (f ⊚ h ⊚ g , hom α g 𝓈)
+      ≡⟨ nat t g (f ⊚ h , 𝓈) ⟩
+    hom β g (ob t (f ⊚ h , 𝓈))
+      ∎
+  id-hom (α ⇒PSh β) t =
+    ≡PShMorCart (λ {(f , 𝓈) i → ob t (𝒾𝒹L f i , 𝓈)})
+  ⊚-hom (α ⇒PSh β) f g t =
+    ≡PShMorCart (λ {(h , 𝓈) i → ob t (⊚Assoc f g h i , 𝓈)})
 
-  !ηPSh : {F : ob (PSh 𝒞)} → (α : PSh 𝒞 [ F , 1PSh ]) → α ≡ !PSh
-  !ηPSh α i .N-ob x t = lift tt
-  !ηPSh α i .N-hom a = refl
+  ΛPSh : {γ : PShs} {α β : PSh} → PShMor (γ ⊹ α) β → PShMor γ (α ⇒PSh β)
+  ob (ob (ΛPSh {γ} t) 𝓈s) (f , 𝓈) = ob t (homs γ f 𝓈s ⊕ 𝓈) 
+  nat (ob (ΛPSh {γ} {α} {β} t) 𝓈s) f (g , 𝓈) =
+    ob t (homs γ (g ⊚ f) 𝓈s ⊕ hom α f 𝓈)
+      ≡⟨ (λ i → ob t (⊚-homs γ g f 𝓈s i ⊕ hom α f 𝓈)) ⟩
+    ob t (homs (γ ⊹ α) f (homs γ g 𝓈s ⊕ 𝓈))
+      ≡⟨ nat t f (homs γ g 𝓈s ⊕ 𝓈) ⟩
+    hom β f (ob t (homs γ g 𝓈s ⊕ 𝓈))
+      ∎
+  nat (ΛPSh {γ} t) f 𝓈s =
+    ≡PShMorCart (λ {(g , 𝓈) i → ob t (⊚-homs γ f g 𝓈s (~ i) ⊕ 𝓈)})
 
-  -- Products
+  AppPSh : {γ : PShs} {α β : PSh} → PShMor γ (α ⇒PSh β) → PShMor γ α → PShMor γ β
+  ob (AppPSh t s) {A} 𝓈s = ob (ob t 𝓈s) (𝒾𝒹 A , ob s 𝓈s)
+  nat (AppPSh {γ} {α} {β} t s) {A} {B} f 𝓈s =
+    ob (ob t (homs γ f 𝓈s)) (𝒾𝒹 A , ob s (homs γ f 𝓈s))
+      ≡⟨ (λ i → ob (nat t f 𝓈s i) (𝒾𝒹 A , nat s f 𝓈s i)) ⟩
+    ob (ob t 𝓈s) (f ⊚ 𝒾𝒹 A , hom α f (ob s 𝓈s))
+      ≡⟨ (λ i → ob (ob t 𝓈s) (𝒾𝒹L (𝒾𝒹R f i) (~ i) , hom α f (ob s 𝓈s))) ⟩
+    ob (ob t 𝓈s) (𝒾𝒹 B ⊚ f , hom α f (ob s 𝓈s))
+      ≡⟨ nat (ob t 𝓈s) f (𝒾𝒹 B , ob s 𝓈s) ⟩
+    hom β f (ob (ob t 𝓈s) (𝒾𝒹 B , ob s 𝓈s))
+      ∎
 
-  ×PSh : ob (PSh 𝒞) → ob (PSh 𝒞) → ob (PSh 𝒞)
-  ×PSh F G .F-ob x = F ⟅ x ⟆ ×SET G ⟅ x ⟆
-  ×PSh F G .F-hom a (t , s) = F-hom F a t , F-hom G a s
-  ×PSh F G .F-id i (t , s) = F-id F i t , F-id G i s
-  ×PSh F G .F-seq a b i (t , s) = F-seq F a b i t , F-seq G a b i s
+  ≡PShMor⇒ : {γ : PShs} {α β : PSh} {t s : PShMor γ (α ⇒PSh β)} →
+    ({A B : 𝑜𝑏} (𝓈s : secs γ A) (f : 𝑚𝑜𝑟 B A) (𝓈 : sec α B) →
+      ob (ob t 𝓈s) (f , 𝓈) ≡ ob (ob s 𝓈s) (f , 𝓈)) → t ≡ s
+  ≡PShMor⇒ {t = t} p = ≡PShMor (λ 𝓈s → ≡PShMorCart (λ {(f , 𝓈) → p 𝓈s f 𝓈}))
 
-  PairPSh : {F G H : ob (PSh 𝒞)} → PSh 𝒞 [ F , G ] → PSh 𝒞 [ F , H ] →
-    PSh 𝒞 [ F , ×PSh G H ]
-  PairPSh α β .N-ob x t = N-ob α x t , N-ob β x t
-  PairPSh α β .N-hom a i t = N-hom α a i t , N-hom β a i t
+  ΛnatPSh : {γ δ : PShs} {α β : PSh} (t : PShMor (δ ⊹ α) β) (σ : PShMors γ δ) →
+    ΛPSh t P.⟦ σ ⟧ ≡ ΛPSh (t P.⟦ P.W₂tms α σ ⟧)
+  ΛnatPSh {γ} {δ} {α} {β} t σ =
+    ≡PShMor⇒ {α = α} {β}
+      (λ 𝓈s f 𝓈 →
+        ob t (homs δ f (obs σ 𝓈s) ⊕ 𝓈)
+          ≡⟨ (λ i → ob t (nats σ f 𝓈s (~ i) ⊕ 𝓈)) ⟩
+        ob t (obs σ (homs γ f 𝓈s) ⊕ 𝓈)
+          ≡⟨ (λ i → ob t (obs σ (obsId (homs γ f 𝓈s) (~ i)) ⊕ 𝓈)) ⟩
+        ob t (obs σ (obs (P.𝒾𝒹 γ) (homs γ f 𝓈s)) ⊕ 𝓈)
+          ≡⟨ (λ i → ob t (obs σ (obsW α (P.𝒾𝒹 γ) (homs γ f 𝓈s) 𝓈 (~ i)) ⊕ 𝓈)) ⟩
+        ob t (obs σ (obs (W₁PShs α (P.𝒾𝒹 γ)) (homs γ f 𝓈s ⊕ 𝓈)) ⊕ 𝓈)
+          ≡⟨ (λ i → ob t (obs∘PSh σ (W₁PShs α (P.𝒾𝒹 γ)) (homs γ f 𝓈s ⊕ 𝓈) (~ i) ⊕ 𝓈)) ⟩
+        ob t (obs (σ P.⊚ W₁PShs α (P.𝒾𝒹 γ)) (homs γ f 𝓈s ⊕ 𝓈) ⊕ 𝓈)
+          ∎)
 
-  π₁PSh : (F G : ob (PSh 𝒞)) → PSh 𝒞 [ ×PSh F G , F ]
-  π₁PSh F G .N-ob x (t , s) = t
-  π₁PSh F G .N-hom a = refl
+  AppβPSh : {γ : PShs} {α β : PSh} (t : PShMor (γ ⊹ α) β) (s : PShMor γ α) →
+    AppPSh (ΛPSh t) s ≡ (t P.⟦ P.𝒾𝒹 γ ⊕ s ⟧)
+  AppβPSh {γ} t s =
+    ≡PShMor
+      (λ {A} 𝓈s →
+        ob t (homs γ (𝒾𝒹 A) 𝓈s ⊕ ob s 𝓈s)
+          ≡⟨ (λ i → ob t (id-homs γ 𝓈s i ⊕ ob s 𝓈s)) ⟩
+        ob t (𝓈s ⊕ ob s 𝓈s)
+          ≡⟨ (λ i → ob t (obsId 𝓈s (~ i) ⊕ ob s 𝓈s)) ⟩
+        ob t (obs (idPSh γ) 𝓈s ⊕ ob s 𝓈s)
+          ∎)
 
-  π₁βPSh : {F G H : ob (PSh 𝒞)} (α : PSh 𝒞 [ F , G ]) (β : PSh 𝒞 [ F , H ]) →
-    π₁PSh G H 𝒩∘ PairPSh α β ≡ α
-  π₁βPSh α β i .N-ob = N-ob α
-  π₁βPSh {F} {G} {H} α β i .N-hom {x} {y} a j t =
-    isSet→SquareP (λ i j → snd (F-ob G y))
-      (λ k → (π₁PSh G H 𝒩∘ PairPSh α β) .N-hom a k t)
-      (λ k → N-hom α a k t)
-      (λ k → N-ob α y (F-hom F a t))
-      (λ k → F-hom G a (N-ob α x t)) i j
+  𝐴𝑝𝑝PSh : {γ : PShs} {α β : PSh} → PShMor γ (α ⇒PSh β) → PShMor (γ ⊹ α) β
+  𝐴𝑝𝑝PSh {γ} {α} {β} t = AppPSh {γ ⊹ α} {α} {β} (t P.⟦ P.π ⟧) (P.𝑧)
 
-  π₂PSh : (F G : ob (PSh 𝒞)) → PSh 𝒞 [ ×PSh F G , G ]
-  π₂PSh F G .N-ob x (t , s) = s
-  π₂PSh F G .N-hom a = refl
+  AppηPSh : {γ : PShs} {α β : PSh} (t : PShMor γ (α ⇒PSh β)) →
+    t ≡ ΛPSh (𝐴𝑝𝑝PSh {γ} {α} {β} t)
+  AppηPSh {γ} {α} {β} t =
+    ≡PShMor⇒ {α = α} {β}
+      (λ {Γ} {Δ} 𝓈s f 𝓈 →
+        ob (ob t 𝓈s) (f , 𝓈)
+          ≡⟨ (λ i → ob (ob t 𝓈s) (𝒾𝒹R f (~ i) , 𝓈)) ⟩
+        ob (ob t 𝓈s) (f ⊚ 𝒾𝒹 Δ , 𝓈)
+          ≡⟨ (λ i → ob (nat t f 𝓈s (~ i)) (𝒾𝒹 Δ , 𝓈)) ⟩
+        ob (ob t (homs γ f 𝓈s)) (𝒾𝒹 Δ , 𝓈)
+          ≡⟨ (λ i → ob (ob t (obsId (homs γ f 𝓈s) (~ i))) (𝒾𝒹 Δ , 𝓈)) ⟩
+        ob (ob t (obs (idPSh γ) (homs γ f 𝓈s))) (𝒾𝒹 Δ , 𝓈)
+          ≡⟨ (λ i → ob (ob t (obsW α (idPSh γ) (homs γ f 𝓈s) 𝓈 (~ i))) (𝒾𝒹 Δ , 𝓈)) ⟩
+        ob (ob t (obs (W₁PShs α (idPSh γ)) (homs γ f 𝓈s ⊕ 𝓈))) (𝒾𝒹 Δ , 𝓈)
+          ∎)
 
-  π₂βPSh : {F G H : ob (PSh 𝒞)} (α : PSh 𝒞 [ F , G ]) (β : PSh 𝒞 [ F , H ]) →
-    π₂PSh G H 𝒩∘ PairPSh α β ≡ β
-  π₂βPSh α β i .N-ob = N-ob β
-  π₂βPSh {F} {G} {H} α β i .N-hom {x} {y} a j t =
-    isSet→SquareP (λ i j → snd (F-ob H y))
-      (λ k → (π₂PSh G H 𝒩∘ PairPSh α β) .N-hom a k t)
-      (λ k → N-hom β a k t)
-      (λ k → N-ob β y (F-hom F a t))
-      (λ k → F-hom H a (N-ob β x t)) i j
+  open CCC
 
-  πηPSh : (F G H : ob (PSh 𝒞)) (α : PSh 𝒞 [ F , ×PSh G H ]) →
-    PairPSh (π₁PSh G H 𝒩∘ α) (π₂PSh G H 𝒩∘ α) ≡ α
-  πηPSh F G H α i .N-ob x t = N-ob α x t
-  πηPSh F G H α i .N-hom {x} {y} a j t =
-    isSet→SquareP (λ i j → snd (G ⟅ y ⟆ ×SET H ⟅ y ⟆))
-      (λ k → PairPSh (π₁PSh G H 𝒩∘ α) (π₂PSh G H 𝒩∘ α) .N-hom a k t)
-      (λ k → N-hom α a k t)
-      (λ k → N-ob α y (F-hom F a t))
-      (λ k → F-hom G a (fst (N-ob α x t)) , F-hom H a (snd (N-ob α x t))) i j
+  𝒫𝒮𝒽CCC : CCC 𝒫𝒮𝒽
+  _⇛_ 𝒫𝒮𝒽CCC = _⇒PSh_
+  Λ 𝒫𝒮𝒽CCC = ΛPSh
+  𝑎𝑝𝑝 𝒫𝒮𝒽CCC = AppPSh
+  Λnat 𝒫𝒮𝒽CCC = ΛnatPSh
+  𝑎𝑝𝑝β 𝒫𝒮𝒽CCC = AppβPSh
+  𝑎𝑝𝑝η 𝒫𝒮𝒽CCC {γ} {α} {β} = AppηPSh {γ} {α} {β}
 
-  -- Exponentials
+{-module PShWeave {ℓ : Level} (𝒞 : Category ℓ ℓ) where
+  open Presheaf 𝒞
+  open Category 𝒞
+  open PSh
+  open PShMor
 
-  ⇒PSh : ob (PSh 𝒞) → ob (PSh 𝒞) → ob (PSh 𝒞)
-  ⇒PSh F G .F-ob x = PSh 𝒞 [ ×PSh (よ x) F , G ] , isSetNat
-  ⇒PSh F G .F-hom a α .N-ob x (b , t) = N-ob α x (b ⋆⟨ C ⟩ a , t)
-  ⇒PSh F G .F-hom a α .N-hom b i (c , t) =
-    (N-ob α _ (b ★ c ★ a , F-hom F b t)
-      ≡⟨ (λ j → N-ob α _ (⋆Assoc C b c a j , F-hom F b t)) ⟩
-    N-ob α _ (b ★ (c ★ a) , F-hom F b t)
-      ≡⟨ (λ j → N-hom α b j (c ★ a , t)) ⟩
-    F-hom G b (N-ob α _ (c ★ a , t))
-      ∎) i
-  ⇒PSh F G .F-id i α .N-ob x (a , t) = N-ob α x (⋆IdR C a i , t)
-  ⇒PSh F G .F-id {x} i α .N-hom {y₁} {y₂} a j (b , t) =
-    isSet→SquareP (λ i j → snd (F-ob G y₂))
-      (λ k → F-hom (⇒PSh F G) (ℐ𝒹 x) α .N-hom a k (b , t))
-      (λ k → N-hom α a k (b , t))
-      (λ k → N-ob α y₂ (⋆IdR C (a ★ b) k , F-hom F a t))
-      (λ k → F-hom G a (N-ob α y₁ (⋆IdR C b k , t))) i j
-  ⇒PSh F G .F-seq a b i α .N-ob x (c , t) = N-ob α x (⋆Assoc C c b a (~ i) , t)
-  ⇒PSh F G .F-seq a b i α .N-hom {z₁} {z₂} c j (d , t) =
-    isSet→SquareP (λ i j → snd (F-ob G z₂))
-      (λ k → F-hom (⇒PSh F G) (b ★ a) α .N-hom c k (d , t))
-      (λ k → F-hom (⇒PSh F G) b (F-hom (⇒PSh F G) a α) .N-hom c k (d , t))
-      (λ k → N-ob α z₂ (⋆Assoc C (c ★ d) b a (~ k) , F-hom F c t))
-      (λ k → F-hom G c (N-ob α z₁ (⋆Assoc C d b a (~ k) , t))) i j
+  record PShMorCart (α β : PSh) : Type ℓ where
+    field
+      ob : {A : 𝑜𝑏} → sec α A → sec β A
+      nat : {A B : 𝑜𝑏} (f : 𝑚𝑜𝑟 A B) (𝓈 : sec α B) →
+        ob (hom α f 𝓈) ≡ hom β f (ob 𝓈)
 
-  ΛPSh : (F G H : ob (PSh 𝒞)) → PSh 𝒞 [ ×PSh F G , H ] → PSh 𝒞 [ F , ⇒PSh G H ]
-  ΛPSh F G H α .N-ob x t .N-ob y (a , s) = N-ob α y (F-hom F a t , s)
-  ΛPSh F G H α .N-ob x t .N-hom a i (b , s) =
-    (N-ob α _ (F-hom F (a ★ b) t , F-hom G a s)
-      ≡⟨ (λ j → N-ob α _ (F-seq F b a j t , F-hom G a s)) ⟩
-    N-ob α _ (F-hom F a (F-hom F b t) , F-hom G a s)
-      ≡⟨ (λ j → N-hom α a j (F-hom F b t , s)) ⟩
-    F-hom H a (N-ob α _ (F-hom F b t , s))
-      ∎) i
-  ΛPSh F G H α .N-hom a i t .N-ob x (b , s) = N-ob α x (F-seq F a b (~ i) t , s)
-  ΛPSh F G H α .N-hom {x₁} {x₂} a i t .N-hom {y₁} {y₂} b j (c , s) =
-    isSet→SquareP (λ i j → snd (F-ob H y₂))
-     (λ k → (N-ob (ΛPSh F G H α) x₂ (F-hom F a t)) .N-hom b k (c , s))
-     (λ k → (F-hom (⇒PSh G H) a (N-ob (ΛPSh F G H α) x₁ t)) .N-hom b k (c , s))
-     (λ k → N-ob α y₂ (F-seq F a (b ★ c) (~ k) t , F-hom G b s))
-     (λ k → F-hom H b (N-ob α y₁ (F-seq F a c (~ k) t , s))) i j
+  open PShMorCart
 
-  AppPSh : (F G H : ob (PSh 𝒞)) → PSh 𝒞 [ F , ⇒PSh G H ] → PSh 𝒞 [ F , G ] → PSh 𝒞 [ F , H ]
-  AppPSh F G H α β .N-ob x t = N-ob (N-ob α x t) x (ℐ𝒹 x , N-ob β x t)
-  AppPSh F G H α β .N-hom {x₁} {x₂} a i t =
-    (N-ob (N-ob α x₂ (F-hom F a t)) x₂ (ℐ𝒹 x₂ , N-ob β x₂ (F-hom F a t))
-      ≡⟨ (λ k → N-ob (N-hom α a k t) x₂ (ℐ𝒹 x₂ , N-hom β a k t )) ⟩
-    N-ob (N-ob α x₁ t) x₂ (ℐ𝒹 x₂ ★ a , F-hom G a (N-ob β x₁ t))
-      ≡⟨ (λ k → N-ob (N-ob α x₁ t) x₂ (⋆IdL C a k , F-hom G a (N-ob β x₁ t))) ⟩
-    N-ob (N-ob α x₁ t) x₂ (a , F-hom G a (N-ob β x₁ t))
-      ≡⟨ (λ k → N-ob (N-ob α x₁ t) x₂ (⋆IdR C a (~ k) , F-hom G a (N-ob β x₁ t))) ⟩
-    N-ob (N-ob α x₁ t) x₂ (a ★ ℐ𝒹 x₁ , F-hom G a (N-ob β x₁ t))
-      ≡⟨ (λ k → N-hom (N-ob α x₁ t) a k (ℐ𝒹 x₁ , N-ob β x₁ t)) ⟩
-    F-hom H a (N-ob (N-ob α x₁ t) x₁ (ℐ𝒹 x₁ , N-ob β x₁ t))
-      ∎) i
+  ≡PShMorCart : {α β : PSh} {t s : PShMorCart α β} →
+    ({A : 𝑜𝑏} (𝓈 : sec α A) → ob t 𝓈 ≡ ob s 𝓈) → t ≡ s
+  ob (≡PShMorCart p i) 𝓈 = p 𝓈 i
+  nat (≡PShMorCart {α} {β} {t} {s} p i) f 𝓈 j =
+    isSet→SquareP (λ i j → isSetSec β)
+      (nat t f 𝓈)
+      (nat s f 𝓈)
+      (p (hom α f 𝓈))
+      (λ k → hom β f (p 𝓈 k)) i j
 
-  eval : (F G : ob (PSh 𝒞)) → PSh 𝒞 [ ×PSh (⇒PSh F G) F , G ]
-  eval F G = AppPSh (×PSh (⇒PSh F G) F) F G (π₁PSh (⇒PSh F G) F) (π₂PSh (⇒PSh F G) F)
+  WγPSh : {α β : PSh} (γ : PShs) → PShMorCart α β → PShMor (γ ⊹ α) β
+  ob (WγPSh γ t) (𝓈s ⊕ 𝓈) = ob t 𝓈
+  nat (WγPSh γ t) f (𝓈s ⊕ 𝓈) = nat t f 𝓈
 
-  ΛnatPSh : (F F' G H : ob (PSh 𝒞)) (α : PSh 𝒞 [ F , F' ]) (β : PSh 𝒞 [ ×PSh F' G , H ]) →
-    ΛPSh F G H (β 𝒩∘ PairPSh (α 𝒩∘ π₁PSh F G) (π₂PSh F G)) ≡ ΛPSh F' G H β 𝒩∘ α
-  ΛnatPSh F F' G H α β i .N-ob x t .N-ob y (a , s) = N-ob β y (N-hom α a i t , s)
-  ΛnatPSh F F' G H α β i .N-ob x t .N-hom {x₁} {x₂} a j (b , s) =
-    isSet→SquareP (λ i j → snd (F-ob H x₂))
-      (λ k →
-        N-hom (N-ob (ΛPSh F G H (β 𝒩∘ PairPSh (α 𝒩∘ π₁PSh F G) (π₂PSh F G))) x t) a k (b , s))
-      (λ k → N-hom (N-ob (ΛPSh F' G H β 𝒩∘ α) x t) a k (b , s))
-      (λ k → N-ob β x₂ (N-hom α (a ★ b) k t , F-hom G a s))
-      (λ k → F-hom H a (N-ob β x₁ (N-hom α b k t , s))) i j
-  ΛnatPSh F F' G H α β i .N-hom {x₁} {x₂} a j t =
-    isSet→SquareP (λ i j → isSetNat)
-      (λ k → N-hom (ΛPSh F G H (β 𝒩∘ PairPSh (α 𝒩∘ π₁PSh F G) (π₂PSh F G))) a k t)
-      (λ k → N-hom (ΛPSh F' G H β 𝒩∘ α) a k t)
-      (λ k → N-ob (ΛnatPSh F F' G H α β k) x₂ (F-hom F a t))
-      (λ k → F-hom (⇒PSh G H) a (N-ob (ΛnatPSh F F' G H α β k) x₁ t)) i j
+  _⊗PSh_ : {γ δ : PShs} {α β : PSh} → PShMors γ δ → PShMorCart α β → PShMors (γ ⊹ α) (δ ⊹ β)
+  _⊗PSh_ {γ} {δ} {α} σ t = W₁PShs α σ ⊕ WγPSh γ t
 
-  AppβPSh : (F G H : ob (PSh 𝒞)) (α : PSh 𝒞 [ ×PSh F G , H ]) (β : PSh 𝒞 [ F , G ]) →
-    AppPSh F G H (ΛPSh F G H α) β ≡ α 𝒩∘ (PairPSh (idTrans F) β)
-  AppβPSh F G H α β i .N-ob x t = N-ob α x (F-id F i t , N-ob β x t)
-  AppβPSh F G H α β i .N-hom {x₁} {x₂} a j t =
-    isSet→SquareP (λ i j → snd (F-ob H x₂))
-      (λ k → N-hom (AppPSh F G H (ΛPSh F G H α) β) a k t)
-      (λ k → N-hom (α 𝒩∘ (PairPSh (idTrans F) β)) a k t)
-      (λ k → N-ob α x₂ (F-id F k (F-hom F a t) , N-ob β x₂ (F-hom F a t)))
-      (λ k → F-hom H a (N-ob α x₁ (F-id F k t , N-ob β x₁ t))) i j
+  module _ {ℓ₁} {ty : Type ℓ₁} where
+    PShFamily = ty → PSh
+    PShsFamily = 𝐶𝑡𝑥 ty → PShs
 
-  AppηPSh : (F G H : ob (PSh 𝒞)) (α : PSh 𝒞 [ F , ⇒PSh G H ]) →
-    ΛPSh F G H (AppPSh (×PSh F G) G H (α 𝒩∘ π₁PSh F G) (π₂PSh F G)) ≡ α
-  AppηPSh F G H α i .N-ob x t .N-ob y (a , s) =
-    (N-ob (N-ob α y (F-hom F a t)) y (ℐ𝒹 y , s)
-      ≡⟨ (λ k → N-ob (N-hom α a k t) y (ℐ𝒹 y , s)) ⟩
-    N-ob (N-ob α x t) y (ℐ𝒹 y ★ a , s)
-      ≡⟨ (λ k → N-ob (N-ob α x t) y (⋆IdL C a k , s)) ⟩
-    N-ob (N-ob α x t) y (a , s)
-      ∎) i
-  AppηPSh F G H α i .N-ob x t .N-hom {y₁} {y₂} a j (b , s) =
-    isSet→SquareP (λ i j → snd (F-ob H y₂))
-     (λ k → N-hom (N-ob
-         (ΛPSh F G H (AppPSh (×PSh F G) G H (α 𝒩∘ π₁PSh F G) (π₂PSh F G))) x t) a k (b , s))
-     (λ k → N-hom (N-ob α x t) a k (b , s))
-     (λ k → (N-ob (AppηPSh F G H α k .N-ob x t) y₂) (F-hom (×PSh (よ x) G) a (b , s)))
-     (λ k → (F-hom H a) (N-ob (N-ob (AppηPSh F G H α k) x t) y₁ (b , s))) i j
-  AppηPSh F G H α i .N-hom {y₁} {y₂} a j t =
-    isSet→SquareP (λ i j → isSetNat)
-      (λ k → N-hom (ΛPSh F G H (AppPSh (×PSh F G) G H (seqTrans (π₁PSh F G) α) (π₂PSh F G))) a k t)
-      (λ k → N-hom α a k t)
-      (λ k → N-ob (AppηPSh F G H α k) y₂ (F-hom F a t))
-      (λ k → F-hom (⇒PSh G H) a (N-ob (AppηPSh F G H α k) y₁ t)) i j
+    plurify : PShFamily → PShsFamily
+    plurify 𝒫 = map𝐶𝑡𝑥 𝒫
 
-module _ {ℓ : Level} {𝒞 : Precategory ℓ ℓ} ⦃ C-cat : isCategory 𝒞 ⦄ where
-  open import Cubical.Categories.Presheaf
-  open PShCartesian 𝒞
-  open Cartesian
+    ⟪secs⟫ : (𝒫 : PShFamily) (Γ : 𝐶𝑡𝑥 ty) → 𝑜𝑏 → Type (ℓ ⊔ ℓ₁)
+    ⟪secs⟫ 𝒫 Γ A = 𝐸𝑙𝑠 (λ B → sec (𝒫 B) A) Γ
 
-  instance
-    PShCat : isCategory (PSh 𝒞)
-    PShCat = isCatPreShv {C = 𝒞}
+    ⇓ : {𝒫 : PShFamily} {Γ : 𝐶𝑡𝑥 ty} {A : 𝑜𝑏} →
+      secs (plurify 𝒫 Γ) A → ⟪secs⟫ 𝒫 Γ A
+    ⇓ {Γ = ∅} 𝓈s = !
+    ⇓ {Γ = Γ ⊹ A} (𝓈s ⊕ 𝓈) = ⇓ 𝓈s ⊕ 𝓈
 
-  instance
-    PShCart : Cartesian (PSh 𝒞)
-    PShCart .C-1 = 1PSh
-    PShCart .C-! = !PSh
-    PShCart .C-!η = !ηPSh
-    PShCart .C-× = ×PSh
-    PShCart .C-pair = PairPSh
-    PShCart .C-π₁ = π₁PSh
-    PShCart .C-π₂ = π₂PSh
-    PShCart .C-π₁β = π₁βPSh
-    PShCart .C-π₂β = π₂βPSh
-    PShCart .C-πη = πηPSh
-    PShCart .C-⇒ = ⇒PSh
-    PShCart .C-Λ = ΛPSh
-    PShCart .C-App = AppPSh
-    PShCart .C-Λnat = ΛnatPSh
-    PShCart .C-Appβ = AppβPSh
-    PShCart .C-Appη F G H α = AppηPSh F G H α ⁻¹
+    ⇑ : {𝒫 : PShFamily} {Γ : 𝐶𝑡𝑥 ty} {A : 𝑜𝑏} →
+      ⟪secs⟫ 𝒫 Γ A → secs (plurify 𝒫 Γ) A
+    ⇑ ! = !
+    ⇑ (𝓈s ⊕ 𝓈) = ⇑ 𝓈s ⊕ 𝓈
+
+    ⇓hom : {𝒫 : PShFamily} {Γ : 𝐶𝑡𝑥 ty} {A B : 𝑜𝑏} (f : 𝑚𝑜𝑟 A B) (𝓈s : secs (plurify 𝒫 Γ) B) →
+      ⇓ (homs (plurify 𝒫 Γ) f 𝓈s) ≡ map𝐸𝑙𝑠 (λ {C} → hom (𝒫 C) f) (⇓ 𝓈s)
+    ⇓hom {Γ = ∅} f 𝓈s = refl
+    ⇓hom {𝒜} {Γ ⊹ A} f (𝓈s ⊕ 𝓈) i = ⇓hom f 𝓈s i ⊕ hom (𝒜 A) f 𝓈
+
+    MorFamily : (𝒫 𝒬 : PShFamily) → Type (ℓ ⊔ ℓ₁)
+    MorFamily 𝒫 𝒬 = (A : ty) → PShMorCart (𝒫 A) (𝒬 A)
+
+    weaveMor : {𝒫 𝒬 : PShFamily} (𝒜 : MorFamily 𝒫 𝒬) →
+      (Γ : 𝐶𝑡𝑥 ty) → PShMors (plurify 𝒫 Γ) (plurify 𝒬 Γ)
+    weaveMor 𝒜 ∅ = !
+    weaveMor 𝒜 (Γ ⊹ A) = weaveMor 𝒜 Γ ⊗PSh 𝒜 A
+
+    ⟪obs⟫ : {𝒫 𝒬 : PShFamily} (𝒜 : MorFamily 𝒫 𝒬) (Γ : 𝐶𝑡𝑥 ty) {A : 𝑜𝑏} →
+      ⟪secs⟫ 𝒫 Γ A → ⟪secs⟫ 𝒬 Γ A
+    ⟪obs⟫ 𝒜 Γ 𝓈s = map𝐸𝑙𝑠 (λ {B} → ob (𝒜 B)) 𝓈s
+
+    ⇓⇑ : {𝒫 𝒬 : PShFamily} (𝒜 : MorFamily 𝒫 𝒬) {Γ : 𝐶𝑡𝑥 ty} {A : 𝑜𝑏}
+      (𝓈s : 𝐸𝑙𝑠 (λ B → sec (𝒫 B) A) Γ) →
+      ⇓ (obs (weaveMor 𝒜 Γ) (⇑ 𝓈s)) ≡ ⟪obs⟫ 𝒜 Γ 𝓈s
+    ⇓⇑ 𝒜 ! = refl
+    ⇓⇑ {𝒫} 𝒜 {Γ = Γ ⊹ A} (𝓈s ⊕ 𝓈) =
+      ⇓ (obs (W₁PShs (𝒫 A) (weaveMor 𝒜 Γ)) (⇑ 𝓈s ⊕ 𝓈)) ⊕ ob (𝒜 A) 𝓈
+        ≡⟨ (λ i → ⇓ (obsW (𝒫 A) (weaveMor 𝒜 Γ) (⇑ 𝓈s) 𝓈 i) ⊕ ob (𝒜 A) 𝓈) ⟩
+      ⇓ (obs (weaveMor 𝒜 Γ) (⇑ 𝓈s)) ⊕ ob (𝒜 A) 𝓈
+        ≡⟨ (λ i → ⇓⇑ 𝒜 𝓈s i ⊕ ob (𝒜 A) 𝓈) ⟩
+      map𝐸𝑙𝑠 (λ {B} → ob (𝒜 B)) 𝓈s ⊕ ob (𝒜 A) 𝓈
+        ∎
+
+  infixl 20 _∘𝒩_
+  _∘𝒩_ : {α β ζ : PSh} → PShMorCart β ζ → PShMorCart α β → PShMorCart α ζ
+  ob (t ∘𝒩 s) 𝓈 = ob t (ob s 𝓈)
+  nat (_∘𝒩_ {α} {β} {ζ} t s) f 𝓈 =
+    ob t (ob s (hom α f 𝓈))
+      ≡⟨ ap (ob t) (nat s f 𝓈) ⟩
+    ob t (hom β f (ob s 𝓈))
+      ≡⟨ nat t f (ob s 𝓈) ⟩
+    hom ζ f (ob t (ob s 𝓈))
+      ∎
+
+  ∘𝒩Assoc : {α β ζ ξ : PSh} (t : PShMorCart ζ ξ) (s : PShMorCart β ζ) (r : PShMorCart α β) →
+    (t ∘𝒩 s) ∘𝒩 r ≡ t ∘𝒩 (s ∘𝒩 r)
+  ∘𝒩Assoc t s r = ≡PShMorCart (λ 𝓈 → refl)
+
+  infixl 20 _[_]PShCart
+  _[_]PShCart : {γ : PShs} {α β : PSh} → PShMorCart α β → PShMor γ α → PShMor γ β
+  ob (t [ s ]PShCart) 𝓈s = ob t (ob s 𝓈s)
+  nat (_[_]PShCart {γ} {α} {β} t s) f 𝓈s =
+    ob t (ob s (homs γ f 𝓈s))
+      ≡⟨ ap (ob t) (nat s f 𝓈s) ⟩
+    ob t (hom α f (ob s 𝓈s))
+      ≡⟨ nat t f (ob s 𝓈s) ⟩
+    hom β f (ob t (ob s 𝓈s))
+      ∎
+
+  WγPShLem : {α β : PSh} {γ δ : PShs} (t : PShMorCart α β) (τ : PShMors γ δ) (s : PShMor γ α) →
+    WγPSh δ t [ τ ⊕ s ]PSh ≡ t [ s ]PShCart
+  WγPShLem t τ s = ≡PShMor (λ 𝓈s → refl)
+
+  []WγPShCart : {γ : PShs} {α β ζ : PSh} (t : PShMorCart β ζ) (s : PShMorCart α β) →
+    t [ WγPSh γ s ]PShCart ≡ WγPSh γ (t ∘𝒩 s)
+  []WγPShCart t s = ≡PShMor (λ {(𝓈s ⊕ 𝓈) → refl})
+  
+  ⊗lem1 : {γ δ ε : PShs} {α β : PSh} (σ : PShMors δ ε) (t : PShMorCart α β)
+    (τ : PShMors γ δ) (s : PShMor γ α) →
+    (σ ⊗PSh t) ∘PSh (τ ⊕ s) ≡ (σ ∘PSh τ) ⊕ (t [ s ]PShCart)
+  ⊗lem1 σ t τ s i = WPShLem2 σ τ s i ⊕ WγPShLem t τ s i
+
+  ⊗lem2 : {γ δ ε : PShs} {α β ζ : PSh} (σ : PShMors δ ε) (t : PShMorCart β ζ)
+    (τ : PShMors γ δ) (s : PShMorCart α β) →
+    (σ ⊗PSh t) ∘PSh (τ ⊗PSh s) ≡ (σ ∘PSh τ) ⊗PSh (t ∘𝒩 s)
+  ⊗lem2 {γ = γ} {α = α} σ t τ s =
+    (σ ⊗PSh t) ∘PSh (τ ⊗PSh s)
+      ≡⟨ (λ i → WPShLem2 σ (W₁PShs α τ) (WγPSh γ s) i ⊕ WγPShLem t (W₁PShs α τ) (WγPSh γ s) i) ⟩
+    (σ ∘PSh W₁PShs α τ) ⊕ (t [ WγPSh γ s ]PShCart)
+      ≡⟨ (λ i → WPShLem4 σ τ i ⊕ []WγPShCart t s i) ⟩
+    (σ ∘PSh τ) ⊗PSh (t ∘𝒩 s)
+      ∎
+
+  ⊗IndLem : {γ δ : PShs} {α β : PSh} (σ : PShMors γ δ) (t : PShMorCart α β)
+    {A : 𝑜𝑏} (𝓈s : secs γ A) (𝓈 : sec α A) →
+    obs (σ ⊗PSh t) (𝓈s ⊕ 𝓈) ≡ obs σ 𝓈s ⊕ ob t 𝓈
+  ⊗IndLem {α = α} σ t 𝓈s 𝓈 i = obsW α σ 𝓈s 𝓈 i ⊕ ob t 𝓈-}
